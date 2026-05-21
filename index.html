@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3B6D11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Ornidex">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>Ornidex — Oiseaux de France</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeece8;
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:rgba(0,0,0,.11);--border2:rgba(0,0,0,.2);
+  --r:10px;--rl:14px;
+  --green:#3B6D11;--gbg:#EAF3DE;--gbd:#C0DD97;--gtx:#3B6D11;
+  --bbg:#E6F1FB;--bbd:#B5D4F4;--btx:#185FA5;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;
+  --text:#f2f2f7;--text2:#aeaeb2;--text3:#636366;
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.2);
+}}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+
+/* Layout */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;flex-shrink:0;border-right:.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+@media(max-width:700px){
+  .app{flex-direction:column}
+  .sidebar{width:100%;height:auto;border-right:none;border-bottom:.5px solid var(--border);max-height:50vh;overflow-y:auto}
+  .sidebar.collapsed{max-height:48px;overflow:hidden}
+}
+
+/* Sidebar */
+.sb-head{padding:.75rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
+.logo i{color:var(--green);font-size:18px}
+.sb-toggle{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;display:none}
+@media(max-width:700px){.sb-toggle{display:flex}}
+.sb-body{flex:1;overflow-y:auto;padding:.5rem 0}
+.sb-section{margin-bottom:.25rem}
+.sb-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:.4rem 1rem .25rem}
+.sb-item{display:flex;align-items:center;gap:7px;padding:.35rem 1rem;font-size:12px;cursor:pointer;color:var(--text2);border-radius:0;transition:background .1s;user-select:none}
+.sb-item:hover{background:var(--bg3);color:var(--text)}
+.sb-item.active{background:var(--gbg);color:var(--gtx);font-weight:500}
+.sb-item i{font-size:14px;flex-shrink:0}
+.sb-item.indent1{padding-left:1.75rem}
+.sb-item.indent2{padding-left:2.5rem}
+.sb-item .caret{margin-left:auto;font-size:12px;transition:transform .2s}
+.sb-item.open .caret{transform:rotate(90deg)}
+.sb-sub{display:none}
+.sb-sub.open{display:block}
+.sb-count{margin-left:auto;font-size:10px;background:var(--bg3);padding:1px 6px;border-radius:10px;color:var(--text3)}
+.sb-item.active .sb-count{background:rgba(59,109,17,.15)}
+
+/* Main header */
+.main-head{padding:.65rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.stats{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;border:.5px solid var(--border);color:var(--text2);background:var(--bg2);white-space:nowrap}
+.pill.s{background:var(--gbg);color:var(--gtx);border-color:var(--gbd)}
+.pill.h{background:var(--bbg);color:var(--btx);border-color:var(--bbd)}
+.head-actions{margin-left:auto;display:flex;gap:5px;align-items:center}
+.icon-btn{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:16px;position:relative;flex-shrink:0}
+.icon-btn:hover{background:var(--bg3);color:var(--text)}
+.icon-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* Toolbar */
+.toolbar{padding:.5rem 1rem;border-bottom:.5px solid var(--border);display:flex;gap:7px;align-items:center;flex-shrink:0;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:140px}
+.sw i{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text3);pointer-events:none}
+.sw input{width:100%;padding:7px 9px 7px 29px;font-size:13px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none}
+.sw input:focus{border-color:#378ADD}
+.sort-select{font-size:12px;padding:6px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;cursor:pointer}
+.filter-toggle{font-size:11px;padding:5px 10px;border-radius:20px;border:.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.filter-toggle.active{background:var(--gbg);color:var(--gtx);border-color:var(--gbd)}
+.filter-toggle.active-h{background:var(--bbg);color:var(--btx);border-color:var(--bbd)}
+.filter-toggle.active-u{background:#FAECE7;color:#993C1D;border-color:#D85A30}
+
+/* Grid */
+.grid-wrap{flex:1;overflow-y:auto;padding:.75rem 1rem 3rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:9px}
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.card.cs{border-color:#97C459}
+.card.ch{border-color:#85B7EB}
+.card.cb{border-color:#97C459;box-shadow:inset 3px 0 0 #85B7EB}
+.cimg{width:100%;aspect-ratio:1;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.cimg img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.cimg img.loaded{opacity:1}
+.cimg .ph{font-size:26px;opacity:.18}
+.ci{padding:6px}
+.cn{font-size:11px;font-weight:600;line-height:1.3}
+.cl{font-size:9px;color:var(--text3);font-style:italic;margin-top:1px;line-height:1.2}
+.cbdg{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap}
+.bdg{font-size:8px;padding:2px 4px;border-radius:3px;display:flex;align-items:center;gap:1px}
+.bdg.s{background:var(--gbg);color:var(--gtx)}
+.bdg.h{background:var(--bbg);color:var(--btx)}
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
+.loading-grid{text-align:center;padding:3rem;color:var(--text2);font-size:14px}
+
+/* Pager */
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:.75rem;font-size:13px;color:var(--text2);flex-shrink:0;border-top:.5px solid var(--border)}
+.pager button{font-size:13px;padding:6px 14px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);cursor:pointer}
+.pager button:hover:not(:disabled){background:var(--bg2)}
+.pager button:disabled{opacity:.3;cursor:default}
+
+/* Modal détail */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.overlay{align-items:center;padding:1rem}}
+.detail{background:var(--bg);border-radius:var(--rl) var(--rl) 0 0;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;display:flex;flex-direction:column}
+@media(min-width:600px){.detail{border-radius:var(--rl);max-height:88vh}}
+.dimg{width:100%;height:200px;background:var(--bg2);flex-shrink:0;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.dimg img{width:100%;height:100%;object-fit:cover}
+.dimg .dph{font-size:52px;opacity:.18}
+.dbody{padding:1.1rem;display:flex;flex-direction:column;gap:.75rem}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dtitle h3{font-size:18px;font-weight:700;line-height:1.2}
+.dtitle p{font-size:11px;color:var(--text3);font-style:italic;margin-top:2px}
+.closebtn{background:var(--bg2);border:.5px solid var(--border);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:15px;color:var(--text)}
+.dtags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg2);color:var(--text2);border:.5px solid var(--border)}
+
+/* Description Wikipedia */
+.dwiki{font-size:13px;color:var(--text2);line-height:1.65;background:var(--bg2);border-radius:var(--r);padding:.75rem;min-height:60px}
+.dwiki.loading{color:var(--text3);font-style:italic}
+
+/* Chant Xeno-canto */
+.dsound{background:var(--bg2);border-radius:var(--r);padding:.65rem .75rem}
+.dsound-title{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:.5rem;display:flex;align-items:center;gap:5px}
+.dsound audio{width:100%;height:36px}
+.dsound-info{font-size:10px;color:var(--text3);margin-top:.35rem}
+.dsound-loading{font-size:12px;color:var(--text3);font-style:italic}
+
+/* Observations */
+.obs-section{border-top:.5px solid var(--border);padding-top:.75rem}
+.obs-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.65rem}
+.orow{display:flex;flex-direction:column;gap:6px;margin-bottom:.65rem}
+.och{display:flex;align-items:center;gap:9px}
+.och label{font-size:13px;font-weight:500;display:flex;align-items:center;gap:5px;cursor:pointer}
+.och input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--green)}
+.ofields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px;padding-left:26px}
+.ofields.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:400px){.ofields.three{grid-template-columns:1fr 1fr}}
+.ofields label{font-size:10px;color:var(--text3);display:block;margin-bottom:2px}
+.ofields input{font-size:12px;padding:6px 8px;width:100%;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none}
+.ofields input:focus{border-color:#378ADD}
+.geo-btn{font-size:11px;padding:5px 10px;border:.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px;margin-top:4px}
+.geo-btn:hover{background:var(--bg2)}
+.savebtn{width:100%;padding:10px;font-size:14px;font-weight:600;background:var(--green);color:white;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+.savebtn:hover{opacity:.9}
+.savedmsg{text-align:center;font-size:11px;color:var(--green);height:14px}
+.elink{display:block;text-align:center;font-size:11px;color:var(--text3);text-decoration:none;padding:.4rem}
+.elink:hover{color:var(--text2)}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:13px;padding:9px 18px;border-radius:20px;z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* Install bar */
+.install-bar{background:var(--gbg);border:.5px solid var(--gbd);border-radius:var(--r);padding:.6rem 1rem;display:flex;align-items:center;gap:9px;font-size:12px;color:var(--gtx);margin:.5rem 1rem 0;flex-shrink:0}
+.install-bar button.inst{font-size:11px;padding:4px 12px;border-radius:20px;background:var(--green);color:#fff;border:none;cursor:pointer;flex-shrink:0}
+.install-bar button.cls{background:none;border:none;color:var(--gtx);cursor:pointer;font-size:16px;margin-left:auto;padding:0 2px}
+
+/* Skeleton loader */
+.skeleton{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar taxonomique -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="logo"><i class="ti ti-feather"></i> Ornidex</div>
+      <button class="sb-toggle" id="sb-toggle" aria-label="Replier"><i class="ti ti-chevron-up"></i></button>
+    </div>
+    <div class="sb-body" id="sb-body">
+      <div class="sb-section">
+        <div class="sb-section-title">Statut</div>
+        <div class="sb-item active" data-filter="all"><i class="ti ti-list"></i> Tous <span class="sb-count" id="cnt-all">…</span></div>
+        <div class="sb-item" data-filter="seen"><i class="ti ti-eye" style="color:#3B6D11"></i> Observés <span class="sb-count" id="cnt-seen">0</span></div>
+        <div class="sb-item" data-filter="heard"><i class="ti ti-ear" style="color:#185FA5"></i> Entendus <span class="sb-count" id="cnt-heard">0</span></div>
+        <div class="sb-item" data-filter="unseen"><i class="ti ti-eye-off" style="color:#993C1D"></i> Non rencontrés <span class="sb-count" id="cnt-unseen">…</span></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-section-title">Taxonomie</div>
+        <div id="taxo-tree"><!-- généré JS --></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu principal -->
+  <div class="main">
+    <div id="install-bar-wrap"></div>
+
+    <div class="main-head">
+      <div class="stats">
+        <span class="pill s" id="st-s">0 obs.</span>
+        <span class="pill h" id="st-h">0 entendus</span>
+        <span class="pill" id="st-t">…</span>
+      </div>
+      <div class="head-actions">
+        <button class="icon-btn" id="btn-export" title="Exporter observations"><i class="ti ti-download"></i></button>
+        <div class="icon-btn" title="Importer observations"><i class="ti ti-upload"></i><input type="file" accept=".json" id="import-file"></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="sw"><i class="ti ti-search"></i><input type="text" id="search" placeholder="Rechercher…" autocomplete="off"></div>
+      <select class="sort-select" id="sort-select">
+        <option value="name">A–Z nom</option>
+        <option value="name-desc">Z–A nom</option>
+        <option value="family">Famille</option>
+        <option value="order">Ordre</option>
+        <option value="seen">Observés en premier</option>
+      </select>
+    </div>
+
+    <div class="grid-wrap" id="grid-wrap">
+      <div class="grid" id="grid">
+        <div class="loading-grid" style="grid-column:1/-1"><i class="ti ti-loader" style="font-size:28px;display:block;margin:0 auto .5rem;opacity:.3"></i>Chargement des espèces depuis eBird…</div>
+      </div>
+    </div>
+
+    <div class="pager" id="pager" style="display:none">
+      <button id="prev"><i class="ti ti-arrow-left"></i></button>
+      <span id="pinfo"></span>
+      <button id="next"><i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" style="display:none"><div class="detail" id="dpanel"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+// ── CONFIG ──────────────────────────────────────────────────────
+const EBIRD_KEY = 'jfekrdmvkjhi';
+const PAGE = 80;
+
+// ── STATE ────────────────────────────────────────────────────────
+let allBirds = [];
+let obs = {};
+let activeFilter = 'all'; // all | seen | heard | unseen | order:X | family:X
+let q = '';
+let sortBy = 'name';
+let page = 0;
+let imgCache = {};
+let wikiCache = {};
+let xenoCache = {};
+let deferredPrompt = null;
+
+// ── STORAGE ──────────────────────────────────────────────────────
+function loadObs(){try{const d=localStorage.getItem('ornidex_obs_v3');if(d)obs=JSON.parse(d);}catch(e){}}
+function saveObs(){try{localStorage.setItem('ornidex_obs_v3',JSON.stringify(obs));}catch(e){}}
+function loadImgCache(){try{const d=localStorage.getItem('ornidex_img_cache');if(d)imgCache=JSON.parse(d);}catch(e){}}
+function saveImgCache(){try{localStorage.setItem('ornidex_img_cache',JSON.stringify(imgCache));}catch(e){}}
+function loadBirdCache(){try{const d=localStorage.getItem('ornidex_birds_v3');if(d){allBirds=JSON.parse(d);return true;}}catch(e){}return false;}
+function saveBirdCache(b){try{localStorage.setItem('ornidex_birds_v3',JSON.stringify(b));}catch(e){}}
+
+// ── EBIRD : charger toutes les espèces France ─────────────────────
+async function fetchAllBirds(){
+  // 1. Liste des codes espèces présentes en France
+  const listResp = await fetch(`https://api.ebird.org/v2/product/spplist/FR?key=${EBIRD_KEY}`);
+  if(!listResp.ok) throw new Error('eBird spplist error');
+  const codes = await listResp.json();
+  const codeSet = new Set(codes);
+
+  // 2. Taxonomie complète en français
+  const taxResp = await fetch(`https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json&locale=fr&key=${EBIRD_KEY}`);
+  if(!taxResp.ok) throw new Error('eBird taxonomy error');
+  const taxData = await taxResp.json();
+
+  // 3. Filtrer : seulement category=species ET présent en France
+  const birds = taxData
+    .filter(t => t.category === 'species' && codeSet.has(t.speciesCode))
+    .map(t => ({
+      id: t.speciesCode,
+      name: t.comNameLocale || t.comName,
+      latin: t.sciName,
+      order: t.order || 'Inconnu',
+      family: t.familyComName || t.familySciName || 'Inconnue',
+      familySci: t.familySciName || '',
+    }));
+
+  return birds;
+}
+
+// ── iNATURALIST photo ─────────────────────────────────────────────
+async function getPhoto(bird){
+  if(imgCache[bird.id]!==undefined) return imgCache[bird.id];
+  imgCache[bird.id]=null;
+  try{
+    const r=await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(bird.latin)}&per_page=1&rank=species`);
+    const d=await r.json();
+    const url=d?.results?.[0]?.default_photo?.medium_url||null;
+    imgCache[bird.id]=url;
+    return url;
+  }catch(e){return null;}
+}
+
+// ── WIKIPEDIA description ─────────────────────────────────────────
+async function getWikiSummary(bird){
+  if(wikiCache[bird.id]) return wikiCache[bird.id];
+  // Essai 1 : nom français
+  const tryFetch = async(title) => {
+    const url=`https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const r=await fetch(url);
+    if(!r.ok) throw new Error('404');
+    const d=await r.json();
+    return d.extract||null;
+  };
+  try{
+    const text = await tryFetch(bird.name);
+    if(text){wikiCache[bird.id]=text;return text;}
+  }catch(e){}
+  try{
+    const text = await tryFetch(bird.latin);
+    if(text){wikiCache[bird.id]=text;return text;}
+  }catch(e){}
+  wikiCache[bird.id]='Aucune description disponible pour cette espèce.';
+  return wikiCache[bird.id];
+}
+
+// ── XENO-CANTO chant ──────────────────────────────────────────────
+async function getXeno(bird){
+  if(xenoCache[bird.id]) return xenoCache[bird.id];
+  try{
+    const r=await fetch(`https://xeno-canto.org/api/2/recordings?query=${encodeURIComponent(bird.latin)}+q:A&page=1`);
+    const d=await r.json();
+    const rec=d?.recordings?.[0];
+    if(!rec){xenoCache[bird.id]=null;return null;}
+    const result={
+      url:`https:${rec.file}`,
+      author:rec.rec,
+      date:rec.date,
+      location:rec.loc,
+      country:rec.cnt,
+      type:rec.type,
+      id:rec.id
+    };
+    xenoCache[bird.id]=result;
+    return result;
+  }catch(e){xenoCache[bird.id]=null;return null;}
+}
+
+// ── TAXONOMIE sidebar ─────────────────────────────────────────────
+function buildTaxoTree(){
+  const tree={};
+  allBirds.forEach(b=>{
+    if(!tree[b.order]) tree[b.order]={families:new Set(),count:0};
+    tree[b.order].families.add(b.family);
+    tree[b.order].count++;
+  });
+
+  const orders=Object.keys(tree).sort();
+  const container=document.getElementById('taxo-tree');
+  container.innerHTML='';
+
+  orders.forEach(order=>{
+    const families=[...tree[order].families].sort();
+    const orderEl=document.createElement('div');
+    orderEl.className='sb-item';
+    orderEl.dataset.filter=`order:${order}`;
+    orderEl.innerHTML=`<i class="ti ti-chevron-right caret"></i><span style="flex:1;font-size:11px">${order}</span><span class="sb-count">${tree[order].count}</span>`;
+    container.appendChild(orderEl);
+
+    const subEl=document.createElement('div');
+    subEl.className='sb-sub';
+    families.forEach(fam=>{
+      const cnt=allBirds.filter(b=>b.family===fam).length;
+      const famEl=document.createElement('div');
+      famEl.className='sb-item indent1';
+      famEl.dataset.filter=`family:${fam}`;
+      famEl.innerHTML=`<i class="ti ti-minus" style="font-size:10px;opacity:.4"></i><span style="flex:1;font-size:11px">${fam}</span><span class="sb-count">${cnt}</span>`;
+      subEl.appendChild(famEl);
+      famEl.addEventListener('click',()=>applyFilter(`family:${fam}`,famEl));
+    });
+    container.appendChild(subEl);
+
+    orderEl.addEventListener('click',()=>{
+      const isOpen=subEl.classList.contains('open');
+      subEl.classList.toggle('open',!isOpen);
+      orderEl.classList.toggle('open',!isOpen);
+      applyFilter(`order:${order}`,orderEl);
+    });
+  });
+}
+
+// ── FILTRES & TRI ─────────────────────────────────────────────────
+function applyFilter(f, el){
+  activeFilter=f; page=0;
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderGrid();
+}
+
+function getFiltered(){
+  const qq=q.toLowerCase();
+  let list=allBirds.filter(b=>{
+    if(qq&&!b.name.toLowerCase().includes(qq)&&!b.latin.toLowerCase().includes(qq)&&!b.family.toLowerCase().includes(qq)&&!b.order.toLowerCase().includes(qq)) return false;
+    if(activeFilter==='seen') return obs[b.id]?.seen;
+    if(activeFilter==='heard') return obs[b.id]?.heard;
+    if(activeFilter==='unseen') return !obs[b.id]?.seen&&!obs[b.id]?.heard;
+    if(activeFilter.startsWith('order:')) return b.order===activeFilter.slice(6);
+    if(activeFilter.startsWith('family:')) return b.family===activeFilter.slice(7);
+    return true;
+  });
+
+  // Tri
+  list=[...list];
+  if(sortBy==='name') list.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  else if(sortBy==='name-desc') list.sort((a,b)=>b.name.localeCompare(a.name,'fr'));
+  else if(sortBy==='family') list.sort((a,b)=>a.family.localeCompare(b.family,'fr')||a.name.localeCompare(b.name,'fr'));
+  else if(sortBy==='order') list.sort((a,b)=>a.order.localeCompare(b.order,'fr')||a.family.localeCompare(b.family,'fr')||a.name.localeCompare(b.name,'fr'));
+  else if(sortBy==='seen') list.sort((a,b)=>{
+    const as=(obs[a.id]?.seen||obs[a.id]?.heard)?1:0;
+    const bs=(obs[b.id]?.seen||obs[b.id]?.heard)?1:0;
+    return bs-as||a.name.localeCompare(b.name,'fr');
+  });
+  return list;
+}
+
+function sc(id){const o=obs[id];if(!o)return '';if(o.seen&&o.heard)return 'cb';if(o.seen)return 'cs';if(o.heard)return 'ch';return '';}
+
+// ── STATS ─────────────────────────────────────────────────────────
+function renderStats(){
+  const seen=allBirds.filter(b=>obs[b.id]?.seen).length;
+  const heard=allBirds.filter(b=>obs[b.id]?.heard).length;
+  const unseen=allBirds.length-allBirds.filter(b=>obs[b.id]?.seen||obs[b.id]?.heard).length;
+  document.getElementById('st-s').textContent=seen+' obs.';
+  document.getElementById('st-h').textContent=heard+' entendus';
+  document.getElementById('st-t').textContent=allBirds.length+' espèces';
+  document.getElementById('cnt-all').textContent=allBirds.length;
+  document.getElementById('cnt-seen').textContent=seen;
+  document.getElementById('cnt-heard').textContent=heard;
+  document.getElementById('cnt-unseen').textContent=unseen;
+}
+
+// ── GRILLE ────────────────────────────────────────────────────────
+async function renderGrid(){
+  const list=getFiltered();
+  const total=list.length;
+  const maxP=Math.max(0,Math.ceil(total/PAGE)-1);
+  if(page>maxP) page=0;
+  const slice=list.slice(page*PAGE,(page+1)*PAGE);
+  const grid=document.getElementById('grid');
+
+  if(!slice.length){
+    grid.innerHTML='<div class="empty"><i class="ti ti-binoculars" style="font-size:28px;display:block;margin:0 auto .5rem;opacity:.3"></i>Aucun oiseau trouvé</div>';
+    document.getElementById('pager').style.display='none';
+    renderStats(); return;
+  }
+
+  grid.innerHTML=slice.map(b=>{
+    const o=obs[b.id]||{};
+    const badges=[];
+    if(o.seen) badges.push('<span class="bdg s"><i class="ti ti-eye"></i> Vu</span>');
+    if(o.heard) badges.push('<span class="bdg h"><i class="ti ti-ear"></i> Entendu</span>');
+    // Photo depuis cache si dispo
+    const imgHtml=imgCache[b.id]
+      ?`<img src="${imgCache[b.id]}" alt="${b.name}" class="loaded">`
+      :`<i class="ti ti-feather ph"></i>`;
+    return `<div class="card ${sc(b.id)}" data-id="${b.id}" role="button" tabindex="0" aria-label="${b.name}">
+      <div class="cimg" id="img-${b.id}">${imgHtml}</div>
+      <div class="ci"><div class="cn">${b.name}</div><div class="cl">${b.latin}</div>${badges.length?'<div class="cbdg">'+badges.join('')+'</div>':''}</div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('click',()=>openDetail(c.dataset.id));
+    c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')openDetail(c.dataset.id);});
+  });
+
+  const pager=document.getElementById('pager');
+  if(total>PAGE){
+    pager.style.display='flex';
+    document.getElementById('pinfo').textContent=`Page ${page+1}/${maxP+1} — ${total} espèces`;
+    document.getElementById('prev').disabled=page===0;
+    document.getElementById('next').disabled=page===maxP;
+  } else { pager.style.display='none'; }
+
+  renderStats();
+
+  // Lazy-load photos uniquement celles qui ne sont pas en cache
+  const toLoad=slice.filter(b=>imgCache[b.id]===undefined);
+  const loadBatch=async(birds)=>{
+    for(const b of birds){
+      const url=await getPhoto(b);
+      const el=document.getElementById('img-'+b.id);
+      if(url&&el){
+        const img=document.createElement('img');
+        img.src=url; img.alt=b.name;
+        img.onload=()=>{img.classList.add('loaded'); saveImgCache();};
+        el.innerHTML=''; el.appendChild(img);
+      }
+    }
+  };
+  for(let i=0;i<toLoad.length;i+=8){
+    loadBatch(toLoad.slice(i,i+8));
+    await new Promise(r=>setTimeout(r,100));
+  }
+}
+
+// ── FICHE DÉTAIL ──────────────────────────────────────────────────
+async function openDetail(id){
+  const b=allBirds.find(x=>x.id===id);
+  if(!b) return;
+  const o=obs[id]||{};
+  const panel=document.getElementById('dpanel');
+
+  // Photo (depuis cache ou fetch)
+  const photoUrl=imgCache[b.id]||await getPhoto(b);
+
+  panel.innerHTML=`
+    <div class="dimg">${photoUrl?`<img src="${photoUrl}" alt="${b.name}">`:'<i class="ti ti-feather dph"></i>'}</div>
+    <div class="dbody">
+      <div class="dhead">
+        <div class="dtitle"><h3>${b.name}</h3><p>${b.latin}</p></div>
+        <button class="closebtn" id="closebtn" aria-label="Fermer"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="dtags">
+        <span class="tag"><i class="ti ti-category" style="font-size:10px;vertical-align:-1px;margin-right:2px"></i>${b.order}</span>
+        <span class="tag">${b.family}</span>
+      </div>
+
+      <div class="dwiki loading" id="dwiki">Chargement de la description…</div>
+
+      <div class="dsound" id="dsound">
+        <div class="dsound-title"><i class="ti ti-music" style="color:#185FA5"></i> Chant</div>
+        <div class="dsound-loading">Chargement…</div>
+      </div>
+
+      <div class="obs-section">
+        <div class="obs-title">Mes observations</div>
+        <div class="orow">
+          <div class="och"><input type="checkbox" id="cb-s" ${o.seen?'checked':''}><label for="cb-s"><i class="ti ti-eye" style="color:#3B6D11"></i> Observé</label></div>
+          <div class="ofields three" id="sf" style="display:${o.seen?'grid':'none'}">
+            <div><label>Date</label><input type="date" id="sd" value="${o.seenDate||''}"></div>
+            <div><label>Lieu</label><input type="text" id="sp" placeholder="ex. Gorges du Tarn" value="${o.seenPlace||''}"></div>
+            <div><label>Coordonnées</label><input type="text" id="sgps" placeholder="lat, lon" value="${o.seenGps||''}"></div>
+          </div>
+          <button class="geo-btn" id="geo-s" style="display:${o.seen?'flex':'none'}"><i class="ti ti-map-pin" style="font-size:13px"></i> Localisation GPS actuelle</button>
+        </div>
+        <div class="orow">
+          <div class="och"><input type="checkbox" id="cb-h" ${o.heard?'checked':''}><label for="cb-h"><i class="ti ti-ear" style="color:#185FA5"></i> Entendu</label></div>
+          <div class="ofields three" id="hf" style="display:${o.heard?'grid':'none'}">
+            <div><label>Date</label><input type="date" id="hd" value="${o.heardDate||''}"></div>
+            <div><label>Lieu</label><input type="text" id="hp" placeholder="ex. Forêt de Mercoire" value="${o.heardPlace||''}"></div>
+            <div><label>Coordonnées</label><input type="text" id="hgps" placeholder="lat, lon" value="${o.heardGps||''}"></div>
+          </div>
+          <button class="geo-btn" id="geo-h" style="display:${o.heard?'flex':'none'}"><i class="ti ti-map-pin" style="font-size:13px"></i> Localisation GPS actuelle</button>
+        </div>
+        <button class="savebtn" id="savebtn"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+        <div class="savedmsg" id="savedmsg"></div>
+      </div>
+      <a class="elink" href="https://ebird.org/species/${b.id}" target="_blank" rel="noopener"><i class="ti ti-external-link" style="font-size:11px;vertical-align:-1px"></i> Voir sur eBird</a>
+    </div>`;
+
+  document.getElementById('overlay').style.display='flex';
+  document.getElementById('closebtn').addEventListener('click',()=>document.getElementById('overlay').style.display='none');
+
+  // Toggle observation fields
+  const toggleField=(cbId,fieldId,geoId)=>{
+    const cb=document.getElementById(cbId);
+    const f=document.getElementById(fieldId);
+    const g=document.getElementById(geoId);
+    cb.addEventListener('change',e=>{
+      f.style.display=e.target.checked?'grid':'none';
+      g.style.display=e.target.checked?'flex':'none';
+    });
+  };
+  toggleField('cb-s','sf','geo-s');
+  toggleField('cb-h','hf','geo-h');
+
+  // Géolocalisation
+  const geoFill=(inputId)=>{
+    if(!navigator.geolocation){toast('Géolocalisation non disponible');return;}
+    toast('Localisation en cours…');
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const coords=`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+      const el=document.getElementById(inputId);
+      if(el) el.value=coords;
+      toast('Position enregistrée !');
+    },()=>toast('Impossible d\'obtenir la position'));
+  };
+  document.getElementById('geo-s').addEventListener('click',()=>geoFill('sgps'));
+  document.getElementById('geo-h').addEventListener('click',()=>geoFill('hgps'));
+
+  // Sauvegarder
+  document.getElementById('savebtn').addEventListener('click',()=>{
+    obs[id]={
+      seen:document.getElementById('cb-s').checked,
+      heard:document.getElementById('cb-h').checked,
+      seenDate:document.getElementById('sd').value,
+      seenPlace:document.getElementById('sp').value,
+      seenGps:document.getElementById('sgps').value,
+      heardDate:document.getElementById('hd').value,
+      heardPlace:document.getElementById('hp').value,
+      heardGps:document.getElementById('hgps').value,
+    };
+    saveObs(); renderGrid();
+    const m=document.getElementById('savedmsg');
+    if(m){m.textContent='Enregistré !';setTimeout(()=>{if(document.getElementById('savedmsg'))document.getElementById('savedmsg').textContent='';},2000);}
+  });
+
+  // Charger Wikipedia en parallèle
+  getWikiSummary(b).then(text=>{
+    const el=document.getElementById('dwiki');
+    if(el){el.textContent=text;el.classList.remove('loading');}
+  });
+
+  // Charger Xeno-canto en parallèle
+  getXeno(b).then(rec=>{
+    const el=document.getElementById('dsound');
+    if(!el) return;
+    if(!rec){
+      el.innerHTML=`<div class="dsound-title"><i class="ti ti-music" style="color:#185FA5"></i> Chant</div><div class="dsound-loading">Aucun enregistrement disponible</div>`;
+      return;
+    }
+    el.innerHTML=`
+      <div class="dsound-title"><i class="ti ti-music" style="color:#185FA5"></i> Chant</div>
+      <audio controls src="${rec.url}" preload="none"></audio>
+      <div class="dsound-info">Par ${rec.author} · ${rec.location||rec.country||''} ${rec.date?'· '+rec.date:''} ${rec.type?'· '+rec.type:''} · <a href="https://xeno-canto.org/${rec.id}" target="_blank" rel="noopener" style="color:var(--btx)">Xeno-canto</a></div>`;
+  });
+}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click',()=>{
+  const data=JSON.stringify({version:3,exported:new Date().toISOString(),observations:obs},null,2);
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download='ornidex-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); toast('Exporté !');
+});
+document.getElementById('import-file').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.observations){obs={...obs,...d.observations};saveObs();renderGrid();toast('Importé !');}
+    }catch(err){toast('Fichier invalide');}
+  };
+  r.readAsText(file); e.target.value='';
+});
+
+// ── ÉVÉNEMENTS ────────────────────────────────────────────────────
+document.getElementById('overlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('overlay')) document.getElementById('overlay').style.display='none';
+});
+document.getElementById('search').addEventListener('input',e=>{q=e.target.value;page=0;renderGrid();});
+document.getElementById('sort-select').addEventListener('change',e=>{sortBy=e.target.value;page=0;renderGrid();});
+document.getElementById('prev').addEventListener('click',()=>{page--;renderGrid();document.getElementById('grid-wrap').scrollTo(0,0);});
+document.getElementById('next').addEventListener('click',()=>{page++;renderGrid();document.getElementById('grid-wrap').scrollTo(0,0);});
+
+// Sidebar mobile toggle
+document.getElementById('sb-toggle').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+// Filtres statut sidebar
+document.querySelectorAll('.sb-item[data-filter]').forEach(el=>{
+  if(['all','seen','heard','unseen'].includes(el.dataset.filter)){
+    el.addEventListener('click',()=>applyFilter(el.dataset.filter,el));
+  }
+});
+
+// ── INSTALL PWA ───────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  const bar=document.getElementById('install-bar-wrap');
+  bar.innerHTML=`<div class="install-bar"><i class="ti ti-device-mobile" style="font-size:17px;flex-shrink:0"></i><span>Installer Ornidex comme app</span><button class="inst" id="install-btn">Installer</button><button class="cls" id="close-bar" aria-label="Fermer"><i class="ti ti-x"></i></button></div>`;
+  document.getElementById('install-btn').addEventListener('click',async()=>{
+    if(!deferredPrompt)return;
+    deferredPrompt.prompt();
+    const{outcome}=await deferredPrompt.userChoice;
+    if(outcome==='accepted')toast('Ornidex installé !');
+    deferredPrompt=null; bar.innerHTML='';
+  });
+  document.getElementById('close-bar').addEventListener('click',()=>bar.innerHTML='');
+});
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+(async()=>{
+  loadObs();
+  loadImgCache();
+
+  // Essayer le cache local d'abord
+  if(loadBirdCache()&&allBirds.length>0){
+    buildTaxoTree();
+    renderGrid();
+    toast(`${allBirds.length} espèces chargées (cache)`);
+  }
+
+  // Puis recharger depuis eBird en arrière-plan (ou si pas de cache)
+  try{
+    const birds=await fetchAllBirds();
+    if(birds.length>50){
+      allBirds=birds;
+      saveBirdCache(birds);
+      buildTaxoTree();
+      renderGrid();
+      if(birds.length!==allBirds.length) toast(`${birds.length} espèces chargées depuis eBird`);
+    }
+  }catch(err){
+    if(allBirds.length===0){
+      document.getElementById('grid').innerHTML='<div class="empty"><i class="ti ti-wifi-off" style="font-size:28px;display:block;margin:0 auto .5rem;opacity:.3"></i>Impossible de charger les espèces.<br>Vérifie ta connexion internet.</div>';
+    }
+  }
+})();
+</script>
+</body>
+</html>
