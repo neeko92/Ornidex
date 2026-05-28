@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#3B6D11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ornidex">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<title>Ornidex</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff;--bg2:#f5f5f3;--bg3:#eee;--tx:#1a1a1a;--tx2:#555;--tx3:#999;--bd:rgba(0,0,0,.11);--bd2:rgba(0,0,0,.2);--r:10px;--rl:14px;--g:#3B6D11;--gbg:#EAF3DE;--gbd:#C0DD97;--gtx:#3B6D11;--bbg:#E6F1FB;--bbd:#B5D4F4;--btx:#185FA5;--tab:56px}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--bg2:#2c2c2e;--bg3:#3a3a3c;--tx:#f2f2f7;--tx2:#aeaeb2;--tx3:#636366;--bd:rgba(255,255,255,.1);--bd2:rgba(255,255,255,.2)}}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--tx)}
+.app{display:flex;height:100vh}
+.sidebar{width:220px;flex-shrink:0;border-right:.5px solid var(--bd);display:flex;flex-direction:column;background:var(--bg2);overflow:hidden}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:var(--tab);background:var(--bg);border-top:.5px solid var(--bd);z-index:100;flex-direction:row}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--tx3);border:none;background:none;font-size:10px;font-weight:500;padding:4px 0;-webkit-tap-highlight-color:transparent}
+.tab-btn i{font-size:22px}.tab-btn.active{color:var(--g)}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden}.page.active{display:flex}
+@media(max-width:680px){.app{flex-direction:column}.sidebar{display:none}.tab-bar{display:flex}.main{height:calc(100vh - var(--tab));overflow:hidden}}
+/* Sidebar */
+.sb-head{padding:.65rem 1rem;border-bottom:.5px solid var(--bd);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}.logo i{color:var(--g)}
+.sb-body{flex:1;overflow-y:auto;padding:.4rem 0}
+.sb-sec{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;padding:.4rem 1rem .2rem}
+.sbi{display:flex;align-items:center;gap:6px;padding:.32rem 1rem;font-size:12px;cursor:pointer;color:var(--tx2);user-select:none}
+.sbi:hover{background:var(--bg3);color:var(--tx)}
+.sbi.st-on{background:var(--gbg);color:var(--gtx);font-weight:600}
+.sbi.tx-on{background:var(--gbg);color:var(--gtx);font-weight:600}
+.sbi i{font-size:13px;flex-shrink:0}
+.caret{margin-left:auto;font-size:11px;transition:transform .2s;flex-shrink:0}
+.sbi.open .caret{transform:rotate(90deg)}
+.sb-sub{display:none}.sb-sub.open{display:block}
+.sbc{margin-left:auto;font-size:10px;background:var(--bg3);padding:1px 5px;border-radius:8px;color:var(--tx3);flex-shrink:0}
+.sbi.st-on .sbc,.sbi.tx-on .sbc{background:rgba(59,109,17,.15)}
+.sbi.i1{padding-left:1.6rem}
+/* Header */
+.main-head{padding:.55rem 1rem;border-bottom:.5px solid var(--bd);display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex-shrink:0}
+.stats{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;border:.5px solid var(--bd);color:var(--tx2);background:var(--bg2);white-space:nowrap}
+.pill.s{background:var(--gbg);color:var(--gtx);border-color:var(--gbd)}.pill.h{background:var(--bbg);color:var(--btx);border-color:var(--bbd)}
+.hact{margin-left:auto;display:flex;gap:5px}
+.ibtn{background:var(--bg2);border:.5px solid var(--bd);border-radius:var(--r);width:31px;height:31px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);font-size:15px;position:relative;flex-shrink:0}
+.ibtn:hover{background:var(--bg3)}
+.ibtn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+/* Toolbar */
+.toolbar{padding:.45rem 1rem;border-bottom:.5px solid var(--bd);display:flex;gap:6px;align-items:center;flex-shrink:0}
+.sw{position:relative;flex:1;min-width:130px}
+.sw i{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--tx3);pointer-events:none}
+.sw input{width:100%;padding:6px 8px 6px 28px;font-size:12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none}
+.sw input:focus{border-color:#378ADD}
+.sort-sel{font-size:12px;padding:6px 8px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none;cursor:pointer}
+/* Filtres actifs */
+.af{display:flex;gap:5px;flex-wrap:wrap;padding:.35rem 1rem;flex-shrink:0}
+.af:empty{display:none}
+.fp{display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px 3px 10px;border-radius:20px;background:var(--gbg);color:var(--gtx);border:.5px solid var(--gbd);cursor:pointer;user-select:none;white-space:nowrap}
+.fp:hover{background:#d4ecc0}.fp-x{font-size:13px;line-height:1;opacity:.7}
+/* Grille */
+.gw{flex:1;overflow-y:auto;padding:.65rem 1rem 1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.card{background:var(--bg);border:.5px solid var(--bd);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:border-color .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.card:hover{border-color:var(--bd2);transform:translateY(-1px)}
+.card.cs{border-color:#97C459}.card.ch{border-color:#85B7EB}.card.cb{border-color:#97C459;box-shadow:inset 3px 0 0 #85B7EB}
+.cimg{width:100%;aspect-ratio:1;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.cimg img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.cimg img.loaded{opacity:1}.cimg .ph{font-size:24px;opacity:.18}
+.ci{padding:6px}.cn{font-size:11px;font-weight:600;line-height:1.3}.cl{font-size:9px;color:var(--tx3);font-style:italic;margin-top:1px}
+.cbdg{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap}
+.bdg{font-size:8px;padding:1px 4px;border-radius:3px;display:flex;align-items:center;gap:1px}
+.bdg.s{background:var(--gbg);color:var(--gtx)}.bdg.h{background:var(--bbg);color:var(--btx)}
+.empty{text-align:center;padding:3rem;color:var(--tx3);font-size:13px;grid-column:1/-1}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:.6rem;font-size:12px;color:var(--tx2);flex-shrink:0;border-top:.5px solid var(--bd)}
+.pager button{font-size:12px;padding:5px 12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);cursor:pointer}
+.pager button:hover:not(:disabled){background:var(--bg2)}.pager button:disabled{opacity:.3;cursor:default}
+/* Carte principale */
+#page-map{position:relative}
+#leaflet-map{position:absolute;inset:0;z-index:1}
+.map-topbar{position:absolute;top:0;left:0;right:0;z-index:10;background:var(--bg);border-bottom:.5px solid var(--bd);padding:.55rem 1rem;display:flex;align-items:center;gap:8px}
+.map-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--tx3);font-size:13px;gap:.5rem;z-index:5;pointer-events:none;background:var(--bg2)}
+/* Taxo mobile */
+#page-taxo{background:var(--bg2);overflow-y:auto}
+.taxo-head{padding:.75rem 1rem;border-bottom:.5px solid var(--bd);font-size:13px;font-weight:600;color:var(--tx2);flex-shrink:0}
+/* Modal fiche — z-index 200, EN DESSOUS du picker */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:600px){.ov{align-items:center;padding:1rem}}
+.det{background:var(--bg);border-radius:var(--rl) var(--rl) 0 0;width:100%;max-width:520px;max-height:93vh;overflow-y:auto;display:flex;flex-direction:column}
+@media(min-width:600px){.det{border-radius:var(--rl);max-height:88vh}}
+.dim{width:100%;height:190px;background:var(--bg2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.dim img{width:100%;height:100%;object-fit:cover}.dim .dph{font-size:48px;opacity:.18}
+.dbd{padding:1rem;display:flex;flex-direction:column;gap:.65rem}
+.dhead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dtitle h3{font-size:17px;font-weight:700;line-height:1.2}
+.dlatin{font-size:11px;color:var(--tx3);font-style:italic;margin-top:2px}
+.cbtn{background:var(--bg2);border:.5px solid var(--bd);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:14px;color:var(--tx)}
+.dtags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg2);color:var(--tx2);border:.5px solid var(--bd)}
+/* Description */
+.desc-block{background:var(--bg2);border-radius:var(--r);padding:.75rem;display:flex;flex-direction:column;gap:.5rem}
+.desc-statut{font-size:11px;font-weight:600;color:var(--gtx);background:var(--gbg);border-radius:6px;padding:3px 8px;align-self:flex-start}
+.desc-sec{display:flex;flex-direction:column;gap:.2rem}
+.desc-sec-title{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em}
+.desc-sec-text{font-size:12px;color:var(--tx2);line-height:1.6}
+.desc-none{font-size:12px;color:var(--tx3);font-style:italic}
+/* Carte répartition */
+.rep-block{background:var(--bg2);border-radius:var(--r);overflow:hidden}
+.rep-title{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding:.5rem .75rem .3rem}
+.rep-img{width:100%;height:140px;display:block;object-fit:contain;background:var(--bg3)}
+.rep-load{height:60px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx3);padding:.5rem .75rem}
+/* Lien Wikipedia */
+.wiki-link{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;padding:9px;border-radius:var(--r);background:var(--bg2);color:var(--tx2);border:.5px solid var(--bd2);text-decoration:none}
+.wiki-link:active{opacity:.7}
+/* Observations */
+.obs-sec{border-top:.5px solid var(--bd);padding-top:.75rem}
+.obs-tit{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.6rem}
+.orow{display:flex;flex-direction:column;gap:5px;margin-bottom:.6rem}
+.och{display:flex;align-items:center;gap:8px}
+.och label{font-size:12px;font-weight:500;display:flex;align-items:center;gap:5px;cursor:pointer}
+.och input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--g)}
+.ofields{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;padding-left:24px}
+.ofields label{font-size:10px;color:var(--tx3);display:block;margin-bottom:2px}
+.ofields input{font-size:11px;padding:5px 7px;width:100%;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none}
+.ofields input:focus{border-color:#378ADD}
+.obs-actions{display:flex;gap:6px;padding-left:24px;margin-top:4px;align-items:center;flex-wrap:wrap}
+.loc-btn{font-size:11px;padding:5px 12px;border:.5px solid var(--bbd);border-radius:var(--r);background:var(--bbg);color:var(--btx);cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:500;-webkit-tap-highlight-color:transparent}
+.gps-disp{font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px}
+.savebtn{width:100%;padding:9px;font-size:13px;font-weight:600;background:var(--g);color:#fff;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;-webkit-tap-highlight-color:transparent}
+/* Picker — z-index 500, AU-DESSUS de la fiche (200), fiche reste intacte */
+.picker-ov{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;background:var(--bg)}
+.picker-head{padding:.65rem 1rem;border-bottom:.5px solid var(--bd);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg)}
+.picker-head h3{font-size:15px;font-weight:600;flex:1}
+.picker-hint{font-size:11px;color:var(--tx2);margin-top:2px}
+.picker-body{flex:1;position:relative;overflow:hidden}
+#picker-map{position:absolute;inset:0;z-index:1}
+/* Bouton GPS — z-index élevé, position absolue dans picker-body */
+.picker-gps{position:absolute;right:14px;bottom:14px;z-index:999;width:46px;height:46px;border-radius:50%;background:var(--bg);border:1.5px solid var(--bbd);box-shadow:0 3px 12px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:var(--btx);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+@keyframes spin{to{transform:rotate(360deg)}}.spin{animation:spin .8s linear infinite}
+.picker-foot{padding:.65rem 1rem;border-top:.5px solid var(--bd);display:flex;gap:8px;align-items:center;flex-shrink:0;background:var(--bg)}
+.picker-foot button{flex:1;padding:10px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn-cancel{background:var(--bg2);border:.5px solid var(--bd2);color:var(--tx)}
+.btn-ok{background:var(--g);border:none;color:#fff}
+.btn-ok:disabled{opacity:.35;cursor:default}
+.picker-coords{font-size:10px;color:var(--tx3);text-align:center;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Popup carte */
+.lf-pop h4{font-size:13px;font-weight:600;margin-bottom:6px;color:#1a1a1a}
+.lf-pop ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:4px}
+.sp-link{color:#185FA5;text-decoration:none;font-weight:500;display:flex;align-items:center;gap:4px;font-size:12px}
+
+/* Rareté */
+.rarity{display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:600}
+.r1{background:#E8F5E9;color:#2E7D32}.r2{background:#EAF3DE;color:#3B6D11}
+.r3{background:#FFF8E1;color:#F57F17}.r4{background:#FFF3E0;color:#E65100}
+.r5{background:#FFEBEE;color:#C62828}
+/* Statut saisonnier */
+.seasons{display:flex;gap:3px;flex-wrap:wrap}
+.season{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:700}
+.sN{background:#E8F5E9;color:#2E7D32}  /* Nicheur */
+.sM{background:#E3F2FD;color:#1565C0}  /* Migrateur */
+.sH{background:#E8EAF6;color:#283593}  /* Hivernant */
+.sS{background:#F3E5F5;color:#6A1B9A}  /* Sédentaire */
+/* Mode liste */
+.list-item{display:flex;align-items:center;gap:8px;padding:7px 1rem;border-bottom:.5px solid var(--bd);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.list-item:hover{background:var(--bg2)}
+.list-thumb{width:40px;height:40px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--bg2);display:flex;align-items:center;justify-content:center}
+.list-thumb img{width:100%;height:100%;object-fit:cover}
+.list-info{flex:1;min-width:0}
+.list-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-sub{font-size:10px;color:var(--tx3);margin-top:1px}
+.list-badges{display:flex;gap:3px;flex-shrink:0}
+/* Lifer counter */
+.lifer-pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#FFF3E0;color:#E65100;border:.5px solid #FFCC80;font-weight:700;white-space:nowrap}
+/* Lightbox */
+.lightbox{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+.lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:4px}
+.lightbox .lb-close{position:absolute;top:12px;right:12px;color:white;font-size:28px;cursor:pointer;background:rgba(0,0,0,.4);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+/* Notes */
+.notes-field{width:100%;padding:7px;font-size:12px;border:.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);color:var(--tx);outline:none;resize:vertical;min-height:60px;font-family:inherit}
+.notes-field:focus{border-color:#378ADD}
+/* Obs info affiché */
+.obs-info{font-size:11px;color:var(--tx2);display:flex;flex-direction:column;gap:2px;padding-left:24px;margin-top:2px}
+.obs-info span{display:flex;align-items:center;gap:4px}
+/* Toggle vue */
+.view-toggle{display:flex;gap:4px;margin-left:auto}
+.vt-btn{background:var(--bg2);border:.5px solid var(--bd);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--tx3)}
+.vt-btn.active{background:var(--gbg);color:var(--gtx);border-color:var(--gbd)}
+
+/* Toast */
+.toast{position:fixed;bottom:calc(var(--tab) + 1rem);left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:12px;padding:8px 16px;border-radius:20px;z-index:600;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+@media(min-width:681px){.toast{bottom:1.5rem}}.toast.show{opacity:1}
+/* Install */
+.ibar-inner{background:var(--gbg);border:.5px solid var(--gbd);border-radius:var(--r);padding:.55rem .85rem;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--gtx);margin:.45rem 1rem 0;flex-shrink:0}
+.ibar-inner .inst{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--g);color:#fff;border:none;cursor:pointer;flex-shrink:0}
+.ibar-inner .cls{background:none;border:none;color:var(--gtx);cursor:pointer;font-size:15px;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sb-head"><div class="logo"><i class="ti ti-feather"></i> Ornidex</div></div>
+    <div class="sb-body">
+      <div class="sb-sec">Statut</div>
+      <div class="sbi st-on" data-st="all"><i class="ti ti-list"></i> Tous <span class="sbc" id="cnt-all-d">630</span></div>
+      <div class="sbi" data-st="seen"><i class="ti ti-eye" style="color:#3B6D11"></i> Observés <span class="sbc" id="cnt-seen-d">0</span></div>
+      <div class="sbi" data-st="heard"><i class="ti ti-ear" style="color:#185FA5"></i> Entendus <span class="sbc" id="cnt-heard-d">0</span></div>
+      <div class="sbi" data-st="unseen"><i class="ti ti-eye-off" style="color:#993C1D"></i> Non rencontrés <span class="sbc" id="cnt-unseen-d">630</span></div>
+      <div class="sb-sec" style="margin-top:.5rem">Taxonomie <span style="font-size:9px;font-weight:400;opacity:.6">(multi)</span></div>
+      <div id="taxo-d"></div>
+    </div>
+  </div>
+  <div class="main">
+    <div id="ibar"></div>
+    <div class="page active" id="page-grid">
+      <div class="main-head">
+        <div class="stats">
+          <span class="pill s" id="st-s">0 obs.</span>
+          <span class="pill h" id="st-h">0 entendus</span>
+          <span class="pill" id="st-t">347 espèces</span><span class="lifer-pill" id="st-lifer">0 lifers</span>
+        </div>
+        <div class="view-toggle"><button class="vt-btn active" id="vt-grid" title="Grille"><i class="ti ti-layout-grid"></i></button><button class="vt-btn" id="vt-list" title="Liste"><i class="ti ti-list"></i></button></div><div class="hact">
+          <button class="ibtn" id="btn-exp" title="Exporter"><i class="ti ti-download"></i></button>
+          <div class="ibtn" title="Importer"><i class="ti ti-upload"></i><input type="file" accept=".json" id="imp-file"></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="sw"><i class="ti ti-search"></i><input type="text" id="search" placeholder="Nom, famille…" autocomplete="off"></div>
+        <select class="sort-sel" id="sort-sel">
+          <option value="name">A–Z</option>
+          <option value="name-desc">Z–A</option>
+          <option value="family">Famille</option>
+          <option value="order">Ordre</option>
+          <option value="seen">Observés d'abord</option>
+        </select>
+      </div>
+      <div class="af" id="af"></div>
+      <div class="gw" id="gw"><div class="grid" id="grid"><div class="empty">Chargement…</div></div></div>
+      <div class="pager" id="pager" style="display:none">
+        <button id="prev"><i class="ti ti-arrow-left"></i></button>
+        <span id="pinfo"></span>
+        <button id="next"><i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+    <div class="page" id="page-map">
+      <div class="map-topbar">
+        <i class="ti ti-map-2" style="color:var(--g);font-size:16px"></i>
+        <span style="font-size:13px;font-weight:600">Mes observations</span>
+        <span class="pill" id="map-count" style="margin-left:auto">0 lieu</span>
+      </div>
+      <div id="leaflet-map"></div>
+      <div class="map-empty" id="map-empty">
+        <i class="ti ti-map-pin-off" style="font-size:36px;opacity:.3"></i>
+        <span>Aucune observation géolocalisée</span>
+        <span style="font-size:11px;opacity:.6">Ajoute des coordonnées GPS dans les fiches</span>
+      </div>
+    </div>
+    <div class="page" id="page-taxo">
+      <div class="taxo-head">Filtrer <span style="font-size:10px;font-weight:400;color:var(--tx3)">(multi)</span></div>
+      <div style="padding:.4rem 0">
+        <div class="sbi st-on" data-st="all" data-mob="1"><i class="ti ti-list"></i> Tous <span class="sbc" id="cnt-all-m">630</span></div>
+        <div class="sbi" data-st="seen" data-mob="1"><i class="ti ti-eye" style="color:#3B6D11"></i> Observés <span class="sbc" id="cnt-seen-m">0</span></div>
+        <div class="sbi" data-st="heard" data-mob="1"><i class="ti ti-ear" style="color:#185FA5"></i> Entendus <span class="sbc" id="cnt-heard-m">0</span></div>
+        <div class="sbi" data-st="unseen" data-mob="1"><i class="ti ti-eye-off" style="color:#993C1D"></i> Non rencontrés <span class="sbc" id="cnt-unseen-m">630</span></div>
+        <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;padding:.6rem 1rem .2rem">Taxonomie</div>
+        <div id="taxo-m"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="grid" id="tab-grid"><i class="ti ti-layout-grid"></i>Espèces</button>
+  <button class="tab-btn" data-tab="map" id="tab-map"><i class="ti ti-map-2"></i>Carte</button>
+  <button class="tab-btn" data-tab="taxo" id="tab-taxo"><i class="ti ti-filter"></i>Filtres</button>
+</div>
+<!-- Fiche oiseau — z-index:200 -->
+<div class="ov" id="ov" style="display:none"><div class="det" id="dpanel"></div></div>
+<!-- Picker localisation — z-index:500, par-dessus la fiche sans la toucher -->
+<div class="picker-ov" id="picker-ov" style="display:none">
+  <div class="picker-head">
+    <div style="flex:1">
+      <h3><i class="ti ti-map-pin" style="color:var(--g);margin-right:4px;vertical-align:-2px"></i>Localisation</h3>
+      <div class="picker-hint" id="picker-hint">Appuie sur la carte ou utilise le GPS</div>
+    </div>
+    <button class="cbtn" id="pk-close"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="picker-body">
+    <div id="picker-map"></div>
+    <button class="picker-gps" id="pk-gps"><i class="ti ti-navigation" id="pk-gps-icon"></i></button>
+  </div>
+  <div class="picker-foot">
+    <button class="btn-cancel" id="pk-cancel">Annuler</button>
+    <span class="picker-coords" id="pk-coords">—</span>
+    <button class="btn-ok" id="pk-ok" disabled>Confirmer</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+const BIRDS=[{id:'pigeon-ramier',name:'Pigeon ramier',latin:'Columba palumbus',order:'Columbiformes',family:'Columbidés',r:1,s:'SNH'},{id:'pie-bavarde',name:'Pie bavarde',latin:'Pica pica',order:'Passériformes',family:'Corvidés',r:1,s:'SN'},{id:'etourneau-sansonnet',name:'Étourneau sansonnet',latin:'Sturnus vulgaris',order:'Passériformes',family:'Sturnidés',r:1,s:'SNH'},{id:'canard-colvert',name:'Canard colvert',latin:'Anas platyrhynchos',order:'Ansériformes',family:'Anatidés',r:1,s:'SN'},{id:'mouette-rieuse',name:'Mouette rieuse',latin:'Chroicocephalus ridibundus',order:'Charadriiformes',family:'Laridés',r:1,s:'NH'},{id:'grand-cormoran',name:'Grand Cormoran',latin:'Phalacrocorax carbo',order:'Suliformes',family:'Phalacrocoracidés',r:1,s:'SN'},{id:'troglodyte-mignon',name:'Troglodyte mignon',latin:'Troglodytes troglodytes',order:'Passériformes',family:'Troglodytidés',r:1,s:'SN'},{id:'bergeronnette-grise',name:'Bergeronnette grise',latin:'Motacilla alba',order:'Passériformes',family:'Motacillidés',r:1,s:'SNH'},{id:'buse-variable',name:'Buse variable',latin:'Buteo buteo',order:'Accipitriformes',family:'Accipitridés',r:1,s:'SN'},{id:'hirondelle-rustique',name:'Hirondelle rustique',latin:'Hirundo rustica',order:'Passériformes',family:'Hirundinidés',r:1,s:'NM'},{id:'geai-des-chenes',name:'Geai des chênes',latin:'Garrulus glandarius',order:'Passériformes',family:'Corvidés',r:1,s:'SN'},{id:'pigeon-biset',name:'Pigeon biset',latin:'Columba livia',order:'Columbiformes',family:'Columbidés',r:1,s:'SN'},{id:'faucon-crecerelle',name:'Faucon crécerelle',latin:'Falco tinnunculus',order:'Falconiformes',family:'Falconidés',r:1,s:'SN'},{id:'foulque-macroule',name:'Foulque macroule',latin:'Fulica atra',order:'Gruiformes',family:'Rallidés',r:1,s:'SN'},{id:'pic-vert',name:'Pic vert',latin:'Picus viridis',order:'Piciformes',family:'Picidés',r:1,s:'SN'},{id:'goeland-leucophee',name:'Goéland leucophée',latin:'Larus michahellis',order:'Charadriiformes',family:'Laridés',r:1,s:'SN'},{id:'pic-epeiche',name:'Pic épeiche',latin:'Dendrocopos major',order:'Piciformes',family:'Picidés',r:1,s:'SN'},{id:'aigrette-garzette',name:'Aigrette garzette',latin:'Egretta garzetta',order:'Pélécaniformes',family:'Ardéidés',r:1,s:'N'},{id:'grimpereau-des-jardins',name:'Grimpereau des jardins',latin:'Certhia brachydactyla',order:'Passériformes',family:'Certhiidés',r:1,s:'SN'},{id:'verdier-d-europe',name:'Verdier d\'Europe',latin:'Chloris chloris',order:'Passériformes',family:'Fringillidés',r:1,s:'SN'},{id:'cygne-tubercule',name:'Cygne tuberculé',latin:'Cygnus olor',order:'Ansériformes',family:'Anatidés',r:1,s:'SN'},{id:'gallinule-poule-d-eau',name:'Gallinule poule-d\'eau',latin:'Gallinula chloropus',order:'Gruiformes',family:'Rallidés',r:1,s:'SN'},{id:'grive-musicienne',name:'Grive musicienne',latin:'Turdus philomelos',order:'Passériformes',family:'Turdidés',r:1,s:'SNH'},{id:'martinet-noir',name:'Martinet noir',latin:'Apus apus',order:'Apodiformes',family:'Apodidés',r:1,s:'NM'},{id:'choucas-des-tours',name:'Choucas des tours',latin:'Coloeus monedula',order:'Passériformes',family:'Corvidés',r:1,s:'SN'},{id:'orite-a-longue-queue',name:'Orite à longue queue',latin:'Aegithalos caudatus',order:'Passériformes',family:'Aegithalidés',r:1,s:'SN'},{id:'accenteur-mouchet',name:'Accenteur mouchet',latin:'Prunella modularis',order:'Passériformes',family:'Prunellidés',r:1,s:'SN'},{id:'grebe-huppe',name:'Grèbe huppé',latin:'Podiceps cristatus',order:'Podicipédiformes',family:'Podicipédidés',r:1,s:'SN'},{id:'bouscarle-de-cetti',name:'Bouscarle de Cetti',latin:'Cettia cetti',order:'Passériformes',family:'Cettiidés',r:1,s:'S'},{id:'goeland-argente',name:'Goéland argenté',latin:'Larus argentatus',order:'Charadriiformes',family:'Laridés',r:1,s:'SN'},{id:'sittelle-torchepot',name:'Sittelle torchepot',latin:'Sitta europaea',order:'Passériformes',family:'Sittidés',r:1,s:'SN'},{id:'linotte-melodieuse',name:'Linotte mélodieuse',latin:'Linaria cannabina',order:'Passériformes',family:'Fringillidés',r:1,s:'NMH'},{id:'hirondelle-de-fenetre',name:'Hirondelle de fenêtre',latin:'Delichon urbicum',order:'Passériformes',family:'Hirundinidés',r:1,s:'NM'},{id:'grande-aigrette',name:'Grande Aigrette',latin:'Ardea alba',order:'Pélécaniformes',family:'Ardéidés',r:2,s:'SNH'},{id:'alouette-des-champs',name:'Alouette des champs',latin:'Alauda arvensis',order:'Passériformes',family:'Alaudidés',r:2,s:'N'},{id:'pipit-farlouse',name:'Pipit farlouse',latin:'Anthus pratensis',order:'Passériformes',family:'Motacillidés',r:2,s:'NMH'},{id:'tarier-patre',name:'Tarier pâtre',latin:'Saxicola rubicola',order:'Passériformes',family:'Muscicapidés',r:2,s:'SN'},{id:'milan-noir',name:'Milan noir',latin:'Milvus migrans',order:'Accipitriformes',family:'Accipitridés',r:2,s:'NM'},{id:'roitelet-triple-bandeau',name:'Roitelet triple-bandeau',latin:'Regulus ignicapilla',order:'Passériformes',family:'Regulidés',r:2,s:'SN'},{id:'martin-pecheur-d-europe',name:'Martin-pêcheur d\'Europe',latin:'Alcedo atthis',order:'Coraciiformes',family:'Alcédinidés',r:2,s:'SN'},{id:'tadorne-de-belon',name:'Tadorne de Belon',latin:'Tadorna tadorna',order:'Ansériformes',family:'Anatidés',r:2,s:'SN'},{id:'grebe-castagneux',name:'Grèbe castagneux',latin:'Tachybaptus ruficollis',order:'Podicipédiformes',family:'Podicipédidés',r:2,s:'SN'},{id:'fauvette-melanocephale',name:'Fauvette mélanocéphale',latin:'Curruca melanocephala',order:'Passériformes',family:'Sylviidés',r:2,s:'SN'},{id:'vanneau-huppe',name:'Vanneau huppé',latin:'Vanellus vanellus',order:'Charadriiformes',family:'Charadriidés',r:2,s:'NMH'},{id:'cisticole-des-joncs',name:'Cisticole des joncs',latin:'Cisticola juncidis',order:'Passériformes',family:'Cisticolidés',r:2,s:'SN'},{id:'bergeronnette-des-ruisseaux',name:'Bergeronnette des ruisseaux',latin:'Motacilla cinerea',order:'Passériformes',family:'Motacillidés',r:2,s:'SN'},{id:'grive-draine',name:'Grive draine',latin:'Turdus viscivorus',order:'Passériformes',family:'Turdidés',r:2,s:'SN'},{id:'bruant-zizi',name:'Bruant zizi',latin:'Emberiza cirlus',order:'Passériformes',family:'Emberizidés',r:2,s:'SN'},{id:'sarcelle-d-hiver',name:'Sarcelle d\'hiver',latin:'Anas crecca',order:'Ansériformes',family:'Anatidés',r:2,s:'NMH'},{id:'faisan-de-colchide',name:'Faisan de Colchide',latin:'Phasianus colchicus',order:'Galliformes',family:'Phasianidés',r:2,s:'SN'},{id:'coucou-gris',name:'Coucou gris',latin:'Cuculus canorus',order:'Cuculiformes',family:'Cuculidés',r:2,s:'NM'},{id:'perruche-a-collier',name:'Perruche à collier',latin:'Psittacula krameri',order:'Psittaciformes',family:'Psittacidés',r:2,s:'S'},{id:'goeland-marin',name:'Goéland marin',latin:'Larus marinus',order:'Charadriiformes',family:'Laridés',r:2,s:'SN'},{id:'heron-garde-boeufs',name:'Héron garde-boeufs',latin:'Ardea ibis',order:'Pélécaniformes',family:'Ardéidés',r:2,s:'SN'},{id:'busard-des-roseaux',name:'Busard des roseaux',latin:'Circus aeruginosus',order:'Accipitriformes',family:'Accipitridés',r:2,s:'NM'},{id:'mesange-nonnette',name:'Mésange nonnette',latin:'Poecile palustris',order:'Passériformes',family:'Paridés',r:2,s:'SN'},{id:'chevalier-guignette',name:'Chevalier guignette',latin:'Actitis hypoleucos',order:'Charadriiformes',family:'Scolopacidés',r:2,s:'NM'},{id:'canard-souchet',name:'Canard souchet',latin:'Spatula clypeata',order:'Ansériformes',family:'Anatidés',r:2,s:'NH'},{id:'roitelet-huppe',name:'Roitelet huppé',latin:'Regulus regulus',order:'Passériformes',family:'Regulidés',r:2,s:'SN'},{id:'goeland-brun',name:'Goéland brun',latin:'Larus fuscus',order:'Charadriiformes',family:'Laridés',r:2,s:''},{id:'epervier-d-europe',name:'Épervier d\'Europe',latin:'Accipiter nisus',order:'Accipitriformes',family:'Accipitridés',r:2,s:'SN'},{id:'mesange-huppee',name:'Mésange huppée',latin:'Lophophanes cristatus',order:'Passériformes',family:'Paridés',r:2,s:'SN'},{id:'bergeronnette-printaniere',name:'Bergeronnette printanière',latin:'Motacilla flava',order:'Passériformes',family:'Motacillidés',r:2,s:'NM'},{id:'sterne-pierregarin',name:'Sterne pierregarin',latin:'Sterna hirundo',order:'Charadriiformes',family:'Laridés',r:2,s:'NM'},{id:'fuligule-morillon',name:'Fuligule morillon',latin:'Aythya fuligula',order:'Ansériformes',family:'Anatidés',r:2,s:'NH'},{id:'canard-chipeau',name:'Canard chipeau',latin:'Mareca strepera',order:'Ansériformes',family:'Anatidés',r:2,s:''},{id:'fuligule-milouin',name:'Fuligule milouin',latin:'Aythya ferina',order:'Ansériformes',family:'Anatidés',r:2,s:'NH'},{id:'bruant-des-roseaux',name:'Bruant des roseaux',latin:'Emberiza schoeniclus',order:'Passériformes',family:'Emberizidés',r:2,s:'NH'},{id:'mesange-noire',name:'Mésange noire',latin:'Periparus ater',order:'Passériformes',family:'Paridés',r:2,s:'SN'},{id:'grand-corbeau',name:'Grand Corbeau',latin:'Corvus corax',order:'Passériformes',family:'Corvidés',r:2,s:'SN'},{id:'mouette-melanocephale',name:'Mouette mélanocéphale',latin:'Ichthyaetus melanocephalus',order:'Charadriiformes',family:'Laridés',r:2,s:''},{id:'corbeau-freux',name:'Corbeau freux',latin:'Corvus frugilegus',order:'Passériformes',family:'Corvidés',r:2,s:'SNH'},{id:'fauvette-grisette',name:'Fauvette grisette',latin:'Curruca communis',order:'Passériformes',family:'Sylviidés',r:2,s:'NM'},{id:'flamant-rose',name:'Flamant rose',latin:'Phoenicopterus roseus',order:'Phoenicoptériformes',family:'Phoenicoptéridés',r:2,s:'SN'},{id:'tourterelle-des-bois',name:'Tourterelle des bois',latin:'Streptopelia turtur',order:'Columbiformes',family:'Columbidés',r:2,s:'NM'},{id:'cigogne-blanche',name:'Cigogne blanche',latin:'Ciconia ciconia',order:'Ciconiiformes',family:'Ciconiidés',r:2,s:'NM'},{id:'tarin-des-aulnes',name:'Tarin des aulnes',latin:'Spinus spinus',order:'Passériformes',family:'Fringillidés',r:2,s:'NH'},{id:'echasse-blanche',name:'Échasse blanche',latin:'Himantopus himantopus',order:'Charadriiformes',family:'Recurvirostridés',r:2,s:'NM'},{id:'bernache-du-canada',name:'Bernache du Canada',latin:'Branta canadensis',order:'Ansériformes',family:'Anatidés',r:2,s:'SN'},{id:'bruant-jaune',name:'Bruant jaune',latin:'Emberiza citrinella',order:'Passériformes',family:'Emberizidés',r:2,s:'NMH'},{id:'chevalier-gambette',name:'Chevalier gambette',latin:'Tringa totanus',order:'Charadriiformes',family:'Scolopacidés',r:2,s:'NM'},{id:'milan-royal',name:'Milan royal',latin:'Milvus milvus',order:'Accipitriformes',family:'Accipitridés',r:2,s:'SN'},{id:'pouillot-fitis',name:'Pouillot fitis',latin:'Phylloscopus trochilus',order:'Passériformes',family:'Phylloscopidés',r:2,s:'NM'},{id:'chevalier-cul-blanc',name:'Chevalier cul-blanc',latin:'Tringa ochropus',order:'Charadriiformes',family:'Scolopacidés',r:2,s:''},{id:'becasseau-variable',name:'Bécasseau variable',latin:'Calidris alpina',order:'Charadriiformes',family:'Scolopacidés',r:2,s:''},{id:'courlis-cendre',name:'Courlis cendré',latin:'Numenius arquata',order:'Charadriiformes',family:'Scolopacidés',r:2,s:'NMH'},{id:'becassine-des-marais',name:'Bécassine des marais',latin:'Gallinago gallinago',order:'Charadriiformes',family:'Scolopacidés',r:2,s:'NMH'},{id:'avocette-elegante',name:'Avocette élégante',latin:'Recurvirostra avosetta',order:'Charadriiformes',family:'Recurvirostridés',r:2,s:'NH'},{id:'rousserolle-effarvatte',name:'Rousserolle effarvatte',latin:'Acrocephalus scirpaceus',order:'Passériformes',family:'Acrocéphalidés',r:2,s:'NM'},{id:'pigeon-colombin',name:'Pigeon colombin',latin:'Columba oenas',order:'Columbiformes',family:'Columbidés',r:2,s:'SN'},{id:'bruant-proyer',name:'Bruant proyer',latin:'Emberiza calandra',order:'Passériformes',family:'Emberizidés',r:2,s:'NM'},{id:'loriot-d-europe',name:'Loriot d\'Europe',latin:'Oriolus oriolus',order:'Passériformes',family:'Oriolidés',r:2,s:'NM'},{id:'gros-bec-casse-noyaux',name:'Gros-bec casse-noyaux',latin:'Coccothraustes coccothraustes',order:'Passériformes',family:'Fringillidés',r:2,s:''},{id:'sterne-caugek',name:'Sterne caugek',latin:'Thalasseus sandvicensis',order:'Charadriiformes',family:'Laridés',r:2,s:''},{id:'rale-d-eau',name:'Râle d\'eau',latin:'Rallus aquaticus',order:'Gruiformes',family:'Rallidés',r:2,s:'SN'},{id:'hirondelle-de-rivage',name:'Hirondelle de rivage',latin:'Riparia riparia',order:'Passériformes',family:'Hirundinidés',r:2,s:'NM'},{id:'huitrier-pie',name:'Huîtrier pie',latin:'Haematopus ostralegus',order:'Charadriiformes',family:'Haematopodidés',r:2,s:''},{id:'pluvier-grand-gravelot',name:'Pluvier grand-gravelot',latin:'Charadrius hiaticula',order:'Charadriiformes',family:'Charadriidés',r:2,s:''},{id:'rougequeue-a-front-blanc',name:'Rougequeue à front blanc',latin:'Phoenicurus phoenicurus',order:'Passériformes',family:'Muscicapidés',r:2,s:'NM'},{id:'alouette-lulu',name:'Alouette lulu',latin:'Lullula arborea',order:'Passériformes',family:'Alaudidés',r:2,s:'NM'},{id:'grive-mauvis',name:'Grive mauvis',latin:'Turdus iliacus',order:'Passériformes',family:'Turdidés',r:2,s:'NMH'},{id:'oie-cendree',name:'Oie cendrée',latin:'Anser anser',order:'Ansériformes',family:'Anatidés',r:2,s:'NH'},{id:'traquet-motteux',name:'Traquet motteux',latin:'Oenanthe oenanthe',order:'Passériformes',family:'Muscicapidés',r:2,s:'NM'},{id:'hypolais-polyglotte',name:'Hypolaïs polyglotte',latin:'Hippolais polyglotta',order:'Passériformes',family:'Acrocéphalidés',r:2,s:'NM'},{id:'spatule-blanche',name:'Spatule blanche',latin:'Platalea leucorodia',order:'Pélécaniformes',family:'Threskiornithidés',r:2,s:''},{id:'huppe-fasciee',name:'Huppe fasciée',latin:'Upupa epops',order:'Bucerotiformes',family:'Upupidés',r:2,s:'NM'},{id:'gobemouche-gris',name:'Gobemouche gris',latin:'Muscicapa striata',order:'Passériformes',family:'Muscicapidés',r:2,s:'NM'},{id:'tournepierre-a-collier',name:'Tournepierre à collier',latin:'Arenaria interpres',order:'Charadriiformes',family:'Scolopacidés',r:2,s:''},{id:'chevalier-aboyeur',name:'Chevalier aboyeur',latin:'Tringa nebularia',order:'Charadriiformes',family:'Scolopacidés',r:2,s:''},{id:'pipit-des-arbres',name:'Pipit des arbres',latin:'Anthus trivialis',order:'Passériformes',family:'Motacillidés',r:2,s:'NM'},{id:'hirondelle-de-rochers',name:'Hirondelle de rochers',latin:'Ptyonoprogne rupestris',order:'Passériformes',family:'Hirundinidés',r:2,s:'SN'},{id:'bouvreuil-pivoine',name:'Bouvreuil pivoine',latin:'Pyrrhula pyrrhula',order:'Passériformes',family:'Fringillidés',r:2,s:'SN'},{id:'nette-rousse',name:'Nette rousse',latin:'Netta rufina',order:'Ansériformes',family:'Anatidés',r:2,s:''},{id:'gobemouche-noir',name:'Gobemouche noir',latin:'Ficedula hypoleuca',order:'Passériformes',family:'Muscicapidés',r:2,s:'NM'},{id:'pipit-spioncelle',name:'Pipit spioncelle',latin:'Anthus spinoletta',order:'Passériformes',family:'Motacillidés',r:2,s:'NH'},{id:'guepier-d-europe',name:'Guêpier d\'Europe',latin:'Merops apiaster',order:'Coraciiformes',family:'Méropidés',r:2,s:'NM'},{id:'canard-siffleur',name:'Canard siffleur',latin:'Mareca penelope',order:'Ansériformes',family:'Anatidés',r:2,s:''},{id:'fou-de-bassan',name:'Fou de Bassan',latin:'Morus bassanus',order:'Suliformes',family:'Sulidés',r:2,s:'SN'},{id:'ibis-falcinelle',name:'Ibis falcinelle',latin:'Plegadis falcinellus',order:'Pélécaniformes',family:'Threskiornithidés',r:2,s:''},{id:'pic-noir',name:'Pic noir',latin:'Dryocopus martius',order:'Piciformes',family:'Picidés',r:2,s:'SN'},{id:'pic-mar',name:'Pic mar',latin:'Dendrocoptes medius',order:'Piciformes',family:'Picidés',r:2,s:'SN'},{id:'fauvette-des-jardins',name:'Fauvette des jardins',latin:'Sylvia borin',order:'Passériformes',family:'Sylviidés',r:2,s:'NM'},{id:'goeland-cendre',name:'Goéland cendré',latin:'Larus canus',order:'Charadriiformes',family:'Laridés',r:2,s:''},{id:'pluvier-petit-gravelot',name:'Pluvier petit-gravelot',latin:'Thinornis dubius',order:'Charadriiformes',family:'Charadriidés',r:2,s:''},{id:'pie-grieche-ecorcheur',name:'Pie-grièche écorcheur',latin:'Lanius collurio',order:'Passériformes',family:'Laniidés',r:2,s:'NM'},{id:'pluvier-argente',name:'Pluvier argenté',latin:'Pluvialis squatarola',order:'Charadriiformes',family:'Charadriidés',r:2,s:''},{id:'cochevis-huppe',name:'Cochevis huppé',latin:'Galerida cristata',order:'Passériformes',family:'Alaudidés',r:3,s:'SN'},{id:'moineau-friquet',name:'Moineau friquet',latin:'Passer montanus',order:'Passériformes',family:'Passérididés',r:3,s:'SN'},{id:'canard-pilet',name:'Canard pilet',latin:'Anas acuta',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'faucon-hobereau',name:'Faucon hobereau',latin:'Falco subbuteo',order:'Falconiformes',family:'Falconidés',r:3,s:'NM'},{id:'grive-litorne',name:'Grive litorne',latin:'Turdus pilaris',order:'Passériformes',family:'Turdidés',r:3,s:'NMH'},{id:'heron-pourpre',name:'Héron pourpré',latin:'Ardea purpurea',order:'Pélécaniformes',family:'Ardéidés',r:3,s:'NM'},{id:'pinson-du-nord',name:'Pinson du Nord',latin:'Fringilla montifringilla',order:'Passériformes',family:'Fringillidés',r:3,s:''},{id:'pouillot-de-bonelli',name:'Pouillot de Bonelli',latin:'Phylloscopus bonelli',order:'Passériformes',family:'Phylloscopidés',r:3,s:'NM'},{id:'circaete-jean-le-blanc',name:'Circaète Jean-le-Blanc',latin:'Circaetus gallicus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'NM'},{id:'cormoran-huppe',name:'Cormoran huppé',latin:'Gulosus aristotelis',order:'Suliformes',family:'Phalacrocoracidés',r:3,s:''},{id:'pic-epeichette',name:'Pic épeichette',latin:'Dryobates minor',order:'Piciformes',family:'Picidés',r:3,s:'SN'},{id:'faucon-pelerin',name:'Faucon pèlerin',latin:'Falco peregrinus',order:'Falconiformes',family:'Falconidés',r:3,s:'NH'},{id:'barge-a-queue-noire',name:'Barge à queue noire',latin:'Limosa limosa',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'grebe-a-cou-noir',name:'Grèbe à cou noir',latin:'Podiceps nigricollis',order:'Podicipédiformes',family:'Podicipédidés',r:3,s:''},{id:'bihoreau-gris',name:'Bihoreau gris',latin:'Nycticorax nycticorax',order:'Pélécaniformes',family:'Ardéidés',r:3,s:'NM'},{id:'bondree-apivore',name:'Bondrée apivore',latin:'Pernis apivorus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'NM'},{id:'becasseau-sanderling',name:'Bécasseau sanderling',latin:'Calidris alba',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'bernache-cravant',name:'Bernache cravant',latin:'Branta bernicla',order:'Ansériformes',family:'Anatidés',r:3,s:'H'},{id:'courlis-corlieu',name:'Courlis corlieu',latin:'Numenius phaeopus',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'grue-cendree',name:'Grue cendrée',latin:'Grus grus',order:'Gruiformes',family:'Gruidés',r:3,s:'NMH'},{id:'busard-saint-martin',name:'Busard Saint-Martin',latin:'Circus cyaneus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'NH'},{id:'tarier-des-pres',name:'Tarier des prés',latin:'Saxicola rubetra',order:'Passériformes',family:'Muscicapidés',r:3,s:'NM'},{id:'ouette-d-egypte',name:'Ouette d\'Égypte',latin:'Alopochen aegyptiaca',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'chouette-hulotte',name:'Chouette hulotte',latin:'Strix aluco',order:'Strigiformes',family:'Strigidés',r:3,s:'SN'},{id:'grand-harle',name:'Grand Harle',latin:'Mergus merganser',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'perdrix-rouge',name:'Perdrix rouge',latin:'Alectoris rufa',order:'Galliformes',family:'Phasianidés',r:3,s:'SN'},{id:'phragmite-des-joncs',name:'Phragmite des joncs',latin:'Acrocephalus schoenobaenus',order:'Passériformes',family:'Acrocéphalidés',r:3,s:''},{id:'combattant-varie',name:'Combattant varié',latin:'Calidris pugnax',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'chevalier-sylvain',name:'Chevalier sylvain',latin:'Tringa glareola',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'sterne-naine',name:'Sterne naine',latin:'Sternula albifrons',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'pluvier-a-collier-interrompu',name:'Pluvier à collier interrompu',latin:'Anarhynchus alexandrinus',order:'Charadriiformes',family:'Charadriidés',r:3,s:''},{id:'chevalier-arlequin',name:'Chevalier arlequin',latin:'Tringa erythropus',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'pipit-maritime',name:'Pipit maritime',latin:'Anthus petrosus',order:'Passériformes',family:'Motacillidés',r:3,s:''},{id:'martinet-a-ventre-blanc',name:'Martinet à ventre blanc',latin:'Tachymarptis melba',order:'Apodiformes',family:'Apodidés',r:3,s:'NM'},{id:'chocard-a-bec-jaune',name:'Chocard à bec jaune',latin:'Pyrrhocorax graculus',order:'Passériformes',family:'Corvidés',r:3,s:''},{id:'crave-a-bec-rouge',name:'Crave à bec rouge',latin:'Pyrrhocorax pyrrhocorax',order:'Passériformes',family:'Corvidés',r:3,s:''},{id:'corneille-mantelee',name:'Corneille mantelée',latin:'Corvus cornix',order:'Passériformes',family:'Corvidés',r:3,s:''},{id:'balbuzard-pecheur',name:'Balbuzard pêcheur',latin:'Pandion haliaetus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'NMH'},{id:'fauvette-pitchou',name:'Fauvette pitchou',latin:'Curruca undata',order:'Passériformes',family:'Sylviidés',r:3,s:'SN'},{id:'sarcelle-d-ete',name:'Sarcelle d\'été',latin:'Spatula querquedula',order:'Ansériformes',family:'Anatidés',r:3,s:'NM'},{id:'pluvier-dore',name:'Pluvier doré',latin:'Pluvialis apricaria',order:'Charadriiformes',family:'Charadriidés',r:3,s:'NMH'},{id:'bec-croise-des-sapins',name:'Bec-croisé des sapins',latin:'Loxia curvirostra',order:'Passériformes',family:'Fringillidés',r:3,s:'SN'},{id:'macreuse-noire',name:'Macreuse noire',latin:'Melanitta nigra',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'guifette-moustac',name:'Guifette moustac',latin:'Chlidonias hybrida',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'becasseau-minute',name:'Bécasseau minute',latin:'Calidris minuta',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'sterne-hansel',name:'Sterne hansel',latin:'Gelochelidon nilotica',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'oedicneme-criard',name:'Oedicnème criard',latin:'Burhinus oedicnemus',order:'Charadriiformes',family:'Burhinidés',r:3,s:'NM'},{id:'rousserolle-turdoide',name:'Rousserolle turdoïde',latin:'Acrocephalus arundinaceus',order:'Passériformes',family:'Acrocéphalidés',r:3,s:'NM'},{id:'grimpereau-des-bois',name:'Grimpereau des bois',latin:'Certhia familiaris',order:'Passériformes',family:'Certhiidés',r:3,s:'SN'},{id:'mouette-tridactyle',name:'Mouette tridactyle',latin:'Rissa tridactyla',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'aigle-royal',name:'Aigle royal',latin:'Aquila chrysaetos',order:'Accipitriformes',family:'Accipitridés',r:3,s:'SN'},{id:'pipit-rousseline',name:'Pipit rousseline',latin:'Anthus campestris',order:'Passériformes',family:'Motacillidés',r:3,s:'NM'},{id:'goeland-railleur',name:'Goéland railleur',latin:'Chroicocephalus genei',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'barge-rousse',name:'Barge rousse',latin:'Limosa lapponica',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'rollier-d-europe',name:'Rollier d\'Europe',latin:'Coracias garrulus',order:'Coraciiformes',family:'Coraciidés',r:3,s:'NM'},{id:'fauvette-passerinette',name:'Fauvette passerinette',latin:'Curruca iberiae',order:'Passériformes',family:'Sylviidés',r:3,s:'NM'},{id:'mesange-boreale',name:'Mésange boréale',latin:'Poecile montanus',order:'Passériformes',family:'Paridés',r:3,s:''},{id:'garrot-a-oeil-d-or',name:'Garrot à oeil d\'or',latin:'Bucephala clangula',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'guifette-noire',name:'Guifette noire',latin:'Chlidonias niger',order:'Charadriiformes',family:'Laridés',r:3,s:'NM'},{id:'perdrix-grise',name:'Perdrix grise',latin:'Perdix perdix',order:'Galliformes',family:'Phasianidés',r:3,s:'SN'},{id:'mouette-pygmee',name:'Mouette pygmée',latin:'Hydrocoloeus minutus',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'cheveche-d-athena',name:'Chevêche d\'Athéna',latin:'Athene noctua',order:'Strigiformes',family:'Strigidés',r:3,s:''},{id:'gorgebleue-a-miroir',name:'Gorgebleue à miroir',latin:'Luscinia svecica',order:'Passériformes',family:'Muscicapidés',r:3,s:'NMH'},{id:'cincle-plongeur',name:'Cincle plongeur',latin:'Cinclus cinclus',order:'Passériformes',family:'Cinclidés',r:3,s:'SN'},{id:'busard-cendre',name:'Busard cendré',latin:'Circus pygargus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'NM'},{id:'torcol-fourmilier',name:'Torcol fourmilier',latin:'Jynx torquilla',order:'Piciformes',family:'Picidés',r:3,s:'NM'},{id:'becasseau-cocorli',name:'Bécasseau cocorli',latin:'Calidris ferruginea',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'moineau-cisalpin',name:'Moineau cisalpin',latin:'Passer italiae',order:'Passériformes',family:'Passérididés',r:3,s:''},{id:'crabier-chevelu',name:'Crabier chevelu',latin:'Ardeola ralloides',order:'Pélécaniformes',family:'Ardéidés',r:3,s:''},{id:'harle-huppe',name:'Harle huppé',latin:'Mergus serrator',order:'Ansériformes',family:'Anatidés',r:3,s:''},{id:'becasseau-maubeche',name:'Bécasseau maubèche',latin:'Calidris canutus',order:'Charadriiformes',family:'Scolopacidés',r:3,s:''},{id:'merle-a-plastron',name:'Merle à plastron',latin:'Turdus torquatus',order:'Passériformes',family:'Turdidés',r:3,s:''},{id:'gypaete-barbu',name:'Gypaète barbu',latin:'Gypaetus barbatus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'SN'},{id:'plongeon-catmarin',name:'Plongeon catmarin',latin:'Gavia stellata',order:'Gaviiformes',family:'Gaviidés',r:3,s:'NMH'},{id:'petit-pingouin',name:'Petit Pingouin',latin:'Alca torda',order:'Charadriiformes',family:'Alcidés',r:3,s:''},{id:'autour-des-palombes',name:'Autour des palombes',latin:'Astur gentilis',order:'Accipitriformes',family:'Accipitridés',r:3,s:'SN'},{id:'elanion-blanc',name:'Élanion blanc',latin:'Elanus caeruleus',order:'Accipitriformes',family:'Accipitridés',r:3,s:'SN'},{id:'fulmar-boreal',name:'Fulmar boréal',latin:'Fulmarus glacialis',order:'Procellariiformes',family:'Procellariidés',r:3,s:''},{id:'fauvette-babillarde',name:'Fauvette babillarde',latin:'Curruca curruca',order:'Passériformes',family:'Sylviidés',r:3,s:'NM'},{id:'taleve-sultane',name:'Talève sultane',latin:'Porphyrio porphyrio',order:'Gruiformes',family:'Rallidés',r:3,s:''},{id:'caille-des-bles',name:'Caille des blés',latin:'Coturnix coturnix',order:'Galliformes',family:'Phasianidés',r:3,s:'NM'},{id:'bruant-fou',name:'Bruant fou',latin:'Emberiza cia',order:'Passériformes',family:'Emberizidés',r:3,s:'SN'},{id:'guillemot-marmette',name:'Guillemot marmette',latin:'Uria aalge',order:'Charadriiformes',family:'Alcidés',r:3,s:''},{id:'puffin-des-baleares',name:'Puffin des Baléares',latin:'Puffinus mauretanicus',order:'Procellariiformes',family:'Procellariidés',r:3,s:''},{id:'sterne-caspienne',name:'Sterne caspienne',latin:'Hydroprogne caspia',order:'Charadriiformes',family:'Laridés',r:3,s:''},{id:'etourneau-unicolore',name:'Étourneau unicolore',latin:'Sturnus unicolor',order:'Passériformes',family:'Sturnidés',r:3,s:''},{id:'pie-grieche-a-tete-rousse',name:'Pie-grièche à tête rousse',latin:'Lanius senator',order:'Passériformes',family:'Laniidés',r:3,s:'NM'},{id:'cassenoix-mouchete',name:'Cassenoix moucheté',latin:'Nucifraga caryocatactes',order:'Passériformes',family:'Corvidés',r:4,s:''},{id:'pouillot-siffleur',name:'Pouillot siffleur',latin:'Phylloscopus sibilatrix',order:'Passériformes',family:'Phylloscopidés',r:4,s:'NM'},{id:'locustelle-tachetee',name:'Locustelle tachetée',latin:'Locustella naevia',order:'Passériformes',family:'Locustellidés',r:4,s:'NM'},{id:'petit-duc-scops',name:'Petit-duc scops',latin:'Otus scops',order:'Strigiformes',family:'Strigidés',r:4,s:'NM'},{id:'panure-a-moustaches',name:'Panure à moustaches',latin:'Panurus biarmicus',order:'Passériformes',family:'Panuridés',r:4,s:'SN'},{id:'labbe-parasite',name:'Labbe parasite',latin:'Stercorarius parasiticus',order:'Charadriiformes',family:'Stercorariidés',r:4,s:''},{id:'aigle-botte',name:'Aigle botté',latin:'Hieraaetus pennatus',order:'Accipitriformes',family:'Accipitridés',r:4,s:''},{id:'faucon-emerillon',name:'Faucon émerillon',latin:'Falco columbarius',order:'Falconiformes',family:'Falconidés',r:4,s:'NH'},{id:'puffin-des-anglais',name:'Puffin des Anglais',latin:'Puffinus puffinus',order:'Procellariiformes',family:'Procellariidés',r:4,s:'N'},{id:'venturon-montagnard',name:'Venturon montagnard',latin:'Carduelis citrinella',order:'Passériformes',family:'Fringillidés',r:4,s:'SN'},{id:'accenteur-alpin',name:'Accenteur alpin',latin:'Prunella collaris',order:'Passériformes',family:'Prunellidés',r:4,s:'S'},{id:'plongeon-huard',name:'Plongeon huard',latin:'Gavia immer',order:'Gaviiformes',family:'Gaviidés',r:4,s:''},{id:'effraie-des-clochers',name:'Effraie des clochers',latin:'Tyto alba',order:'Strigiformes',family:'Strigidés',r:4,s:'SN'},{id:'martinet-pale',name:'Martinet pâle',latin:'Apus pallidus',order:'Apodiformes',family:'Apodidés',r:4,s:'NM'},{id:'cigogne-noire',name:'Cigogne noire',latin:'Ciconia nigra',order:'Ciconiiformes',family:'Ciconiidés',r:4,s:'NM'},{id:'monticole-bleu',name:'Monticole bleu',latin:'Monticola solitarius',order:'Passériformes',family:'Muscicapidés',r:4,s:''},{id:'rousserolle-verderolle',name:'Rousserolle verderolle',latin:'Acrocephalus palustris',order:'Passériformes',family:'Acrocéphalidés',r:4,s:''},{id:'becasseau-violet',name:'Bécasseau violet',latin:'Calidris maritima',order:'Charadriiformes',family:'Scolopacidés',r:4,s:''},{id:'bernache-nonnette',name:'Bernache nonnette',latin:'Branta leucopsis',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'blongios-nain',name:'Blongios nain',latin:'Botaurus minutus',order:'Pélécaniformes',family:'Ardéidés',r:4,s:'NM'},{id:'pie-grieche-meridionale',name:'Pie-grièche méridionale',latin:'Lanius meridionalis',order:'Passériformes',family:'Laniidés',r:4,s:'SN'},{id:'engoulevent-d-europe',name:'Engoulevent d\'Europe',latin:'Caprimulgus europaeus',order:'Caprimulgiformes',family:'Caprimulgidés',r:4,s:'NM'},{id:'grand-labbe',name:'Grand Labbe',latin:'Stercorarius skua',order:'Charadriiformes',family:'Stercorariidés',r:4,s:''},{id:'canard-mandarin',name:'Canard mandarin',latin:'Aix galericulata',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'butor-etoile',name:'Butor étoilé',latin:'Botaurus stellaris',order:'Pélécaniformes',family:'Ardéidés',r:4,s:'SNH'},{id:'tadorne-casarca',name:'Tadorne casarca',latin:'Tadorna ferruginea',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'moineau-soulcie',name:'Moineau soulcie',latin:'Petronia petronia',order:'Passériformes',family:'Passérididés',r:4,s:''},{id:'outarde-canepetiere',name:'Outarde canepetière',latin:'Tetrax tetrax',order:'Otididés',family:'Otididés',r:4,s:''},{id:'remiz-penduline',name:'Rémiz penduline',latin:'Remiz pendulinus',order:'Passériformes',family:'Rémizidés',r:4,s:''},{id:'goeland-pontique',name:'Goéland pontique',latin:'Larus cachinnans',order:'Charadriiformes',family:'Laridés',r:4,s:''},{id:'eider-a-duvet',name:'Eider à duvet',latin:'Somateria mollissima',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'faucon-crecerellette',name:'Faucon crécerellette',latin:'Falco naumanni',order:'Falconiformes',family:'Falconidés',r:4,s:''},{id:'macreuse-brune',name:'Macreuse brune',latin:'Melanitta fusca',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'grebe-esclavon',name:'Grèbe esclavon',latin:'Podiceps auritus',order:'Podicipédiformes',family:'Podicipédidés',r:4,s:''},{id:'sizerin-flamme',name:'Sizerin flammé',latin:'Acanthis flammea',order:'Passériformes',family:'Fringillidés',r:4,s:'H'},{id:'harle-piette',name:'Harle piette',latin:'Mergellus albellus',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'locustelle-luscinioide',name:'Locustelle luscinioïde',latin:'Locustella luscinioides',order:'Passériformes',family:'Locustellidés',r:4,s:''},{id:'hibou-moyen-duc',name:'Hibou moyen-duc',latin:'Asio otus',order:'Strigiformes',family:'Strigidés',r:4,s:'SNH'},{id:'lusciniole-a-moustaches',name:'Lusciniole à moustaches',latin:'Acrocephalus melanopogon',order:'Passériformes',family:'Acrocéphalidés',r:4,s:''},{id:'pic-de-sharpe',name:'Pic de Sharpe',latin:'Picus sharpei',order:'Piciformes',family:'Picidés',r:4,s:''},{id:'plongeon-arctique',name:'Plongeon arctique',latin:'Gavia arctica',order:'Gaviiformes',family:'Gaviidés',r:4,s:''},{id:'fuligule-milouinan',name:'Fuligule milouinan',latin:'Aythya marila',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'fauvette-orphee',name:'Fauvette orphée',latin:'Curruca hortensis',order:'Passériformes',family:'Sylviidés',r:4,s:'NM'},{id:'monticole-de-roche',name:'Monticole de roche',latin:'Monticola saxatilis',order:'Passériformes',family:'Muscicapidés',r:4,s:''},{id:'fauvette-a-lunettes',name:'Fauvette à lunettes',latin:'Curruca conspicillata',order:'Passériformes',family:'Sylviidés',r:4,s:'NM'},{id:'fauvette-de-moltoni',name:'Fauvette de Moltoni',latin:'Curruca subalpina',order:'Passériformes',family:'Sylviidés',r:4,s:''},{id:'percnoptere-d-egypte',name:'Percnoptère d\'Égypte',latin:'Neophron percnopterus',order:'Accipitriformes',family:'Accipitridés',r:4,s:'NM'},{id:'becasse-des-bois',name:'Bécasse des bois',latin:'Scolopax rusticola',order:'Charadriiformes',family:'Scolopacidés',r:4,s:'NMH'},{id:'puffin-yelkouan',name:'Puffin yelkouan',latin:'Puffinus yelkouan',order:'Procellariiformes',family:'Procellariidés',r:4,s:''},{id:'alouette-calandrelle',name:'Alouette calandrelle',latin:'Calandrella brachydactyla',order:'Passériformes',family:'Alaudidés',r:4,s:''},{id:'bruant-ortolan',name:'Bruant ortolan',latin:'Emberiza hortulana',order:'Passériformes',family:'Emberizidés',r:4,s:'NM'},{id:'hibou-des-marais',name:'Hibou des marais',latin:'Asio flammeus',order:'Strigiformes',family:'Strigidés',r:4,s:'NH'},{id:'glareole-a-collier',name:'Glaréole à collier',latin:'Glareola pratincola',order:'Charadriiformes',family:'Glaréolidés',r:4,s:''},{id:'niverolle-alpine',name:'Niverolle alpine',latin:'Montifringilla nivalis',order:'Passériformes',family:'Passérididés',r:4,s:''},{id:'hirondelle-rousseline',name:'Hirondelle rousseline',latin:'Cecropis rufula',order:'Passériformes',family:'Hirundinidés',r:4,s:''},{id:'puffin-de-scopoli',name:'Puffin de Scopoli',latin:'Calonectris diomedea',order:'Procellariiformes',family:'Procellariidés',r:4,s:''},{id:'tichodrome-echelette',name:'Tichodrome échelette',latin:'Tichodroma muraria',order:'Passériformes',family:'Tichodromidés',r:4,s:'S'},{id:'pouillot-a-grands-sourcils',name:'Pouillot à grands sourcils',latin:'Phylloscopus inornatus',order:'Passériformes',family:'Phylloscopidés',r:4,s:''},{id:'oie-rieuse',name:'Oie rieuse',latin:'Anser albifrons',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'vautour-moine',name:'Vautour moine',latin:'Aegypius monachus',order:'Accipitriformes',family:'Accipitridés',r:4,s:'SN'},{id:'becassine-sourde',name:'Bécassine sourde',latin:'Lymnocryptes minimus',order:'Charadriiformes',family:'Scolopacidés',r:4,s:''},{id:'grebe-jougris',name:'Grèbe jougris',latin:'Podiceps grisegena',order:'Podicipédiformes',family:'Podicipédidés',r:4,s:''},{id:'pie-grieche-grise',name:'Pie-grièche grise',latin:'Lanius excubitor',order:'Passériformes',family:'Laniidés',r:4,s:'SNH'},{id:'aigle-de-bonelli',name:'Aigle de Bonelli',latin:'Aquila fasciata',order:'Accipitriformes',family:'Accipitridés',r:4,s:''},{id:'fuligule-nyroca',name:'Fuligule nyroca',latin:'Aythya nyroca',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'becasseau-de-temminck',name:'Bécasseau de Temminck',latin:'Calidris temminckii',order:'Charadriiformes',family:'Scolopacidés',r:4,s:''},{id:'grand-duc-d-europe',name:'Grand-duc d\'Europe',latin:'Bubo bubo',order:'Strigiformes',family:'Strigidés',r:4,s:'SN'},{id:'oceanite-tempete',name:'Océanite tempête',latin:'Hydrobates pelagicus',order:'Procellariiformes',family:'Hydrobatidés',r:4,s:''},{id:'fauvette-sarde',name:'Fauvette sarde',latin:'Curruca sarda',order:'Passériformes',family:'Sylviidés',r:4,s:''},{id:'pygargue-a-queue-blanche',name:'Pygargue à queue blanche',latin:'Haliaeetus albicilla',order:'Accipitriformes',family:'Accipitridés',r:4,s:'NH'},{id:'labbe-pomarin',name:'Labbe pomarin',latin:'Stercorarius pomarinus',order:'Charadriiformes',family:'Stercorariidés',r:4,s:''},{id:'plectrophane-des-neiges',name:'Plectrophane des neiges',latin:'Plectrophenax nivalis',order:'Passériformes',family:'Calcariidés',r:4,s:''},{id:'sittelle-corse',name:'Sittelle corse',latin:'Sitta whiteheadi',order:'Passériformes',family:'Sittidés',r:4,s:'SN'},{id:'puffin-majeur',name:'Puffin majeur',latin:'Ardenna gravis',order:'Procellariiformes',family:'Procellariidés',r:4,s:''},{id:'sterne-arctique',name:'Sterne arctique',latin:'Sterna paradisaea',order:'Charadriiformes',family:'Laridés',r:4,s:''},{id:'faucon-kobez',name:'Faucon kobez',latin:'Falco vespertinus',order:'Falconiformes',family:'Falconidés',r:4,s:''},{id:'tetras-lyre',name:'Tétras lyre',latin:'Lyrurus tetrix',order:'Galliformes',family:'Phasianidés',r:4,s:'SN'},{id:'cygne-chanteur',name:'Cygne chanteur',latin:'Cygnus cygnus',order:'Ansériformes',family:'Anatidés',r:4,s:''},{id:'pic-cendre',name:'Pic cendré',latin:'Picus canus',order:'Piciformes',family:'Picidés',r:4,s:''},{id:'hypolais-icterine',name:'Hypolaïs ictérine',latin:'Hippolais icterina',order:'Passériformes',family:'Acrocéphalidés',r:4,s:''},{id:'harelde-kakawi',name:'Harelde kakawi',latin:'Clangula hyemalis',order:'Ansériformes',family:'Anatidés',r:5,s:''},{id:'alouette-calandre',name:'Alouette calandre',latin:'Melanocorypha calandra',order:'Passériformes',family:'Alaudidés',r:5,s:''},{id:'chevalier-stagnatile',name:'Chevalier stagnatile',latin:'Tringa stagnatilis',order:'Charadriiformes',family:'Scolopacidés',r:5,s:''},{id:'marouette-ponctuee',name:'Marouette ponctuée',latin:'Porzana porzana',order:'Gruiformes',family:'Rallidés',r:5,s:''},{id:'puffin-cendre',name:'Puffin cendré',latin:'Calonectris borealis',order:'Procellariiformes',family:'Procellariidés',r:5,s:''},{id:'pipit-de-richard',name:'Pipit de Richard',latin:'Anthus richardi',order:'Passériformes',family:'Motacillidés',r:5,s:''},{id:'pluvier-guignard',name:'Pluvier guignard',latin:'Eudromias morinellus',order:'Charadriiformes',family:'Charadriidés',r:5,s:''},{id:'guifette-leucoptere',name:'Guifette leucoptère',latin:'Chlidonias leucopterus',order:'Charadriiformes',family:'Laridés',r:5,s:''},{id:'chevechette-d-europe',name:'Chevêchette d\'Europe',latin:'Glaucidium passerinum',order:'Strigiformes',family:'Strigidés',r:5,s:'SN'},{id:'macareux-moine',name:'Macareux moine',latin:'Fratercula arctica',order:'Charadriiformes',family:'Alcidés',r:5,s:'NH'},{id:'pipit-a-gorge-rousse',name:'Pipit à gorge rousse',latin:'Anthus cervinus',order:'Passériformes',family:'Motacillidés',r:5,s:''},{id:'plectrophane-lapon',name:'Plectrophane lapon',latin:'Calcarius lapponicus',order:'Passériformes',family:'Calcariidés',r:5,s:''},{id:'oceanite-cul-blanc',name:'Océanite cul-blanc',latin:'Hydrobates leucorhous',order:'Procellariiformes',family:'Hydrobatidés',r:5,s:''},{id:'faucon-d-eleonore',name:'Faucon d\'Éléonore',latin:'Falco eleonorae',order:'Falconiformes',family:'Falconidés',r:5,s:''},{id:'gelinotte-des-bois',name:'Gélinotte des bois',latin:'Tetrastes bonasia',order:'Galliformes',family:'Phasianidés',r:5,s:'SN'},{id:'nyctale-de-tengmalm',name:'Nyctale de Tengmalm',latin:'Aegolius funereus',order:'Strigiformes',family:'Strigidés',r:5,s:'SN'},{id:'gobemouche-a-collier',name:'Gobemouche à collier',latin:'Ficedula albicollis',order:'Passériformes',family:'Muscicapidés',r:5,s:''},{id:'bruant-nain',name:'Bruant nain',latin:'Emberiza pusilla',order:'Passériformes',family:'Emberizidés',r:5,s:''},{id:'rale-des-genets',name:'Râle des genêts',latin:'Crex crex',order:'Gruiformes',family:'Rallidés',r:5,s:'NM'},{id:'marouette-poussin',name:'Marouette poussin',latin:'Zapornia parva',order:'Gruiformes',family:'Rallidés',r:5,s:''},{id:'aigle-pomarin',name:'Aigle pomarin',latin:'Clanga pomarina',order:'Accipitriformes',family:'Accipitridés',r:5,s:''},{id:'pic-tridactyle',name:'Pic tridactyle',latin:'Picoides tridactylus',order:'Piciformes',family:'Picidés',r:5,s:'SN'},{id:'phragmite-aquatique',name:'Phragmite aquatique',latin:'Acrocephalus paludicola',order:'Passériformes',family:'Acrocéphalidés',r:5,s:''},{id:'sterne-de-dougall',name:'Sterne de Dougall',latin:'Sterna dougallii',order:'Charadriiformes',family:'Laridés',r:5,s:''},{id:'grand-tetras',name:'Grand Tétras',latin:'Tetrao urogallus',order:'Galliformes',family:'Phasianidés',r:5,s:'SN'},{id:'pouillot-iberique',name:'Pouillot ibérique',latin:'Phylloscopus ibericus',order:'Passériformes',family:'Phylloscopidés',r:5,s:''},{id:'buse-pattue',name:'Buse pattue',latin:'Buteo lagopus',order:'Accipitriformes',family:'Accipitridés',r:5,s:''},{id:'pic-a-dos-blanc',name:'Pic à dos blanc',latin:'Dendrocopos leucotos',order:'Piciformes',family:'Picidés',r:5,s:''},{id:'mergule-nain',name:'Mergule nain',latin:'Alle alle',order:'Charadriiformes',family:'Alcidés',r:5,s:''},{id:'marouette-de-baillon',name:'Marouette de Baillon',latin:'Zapornia pusilla',order:'Gruiformes',family:'Rallidés',r:5,s:''},{id:'aigle-imperial',name:'Aigle impérial',latin:'Aquila heliaca',order:'Accipitriformes',family:'Accipitridés',r:5,s:''},{id:'jaseur-boreal',name:'Jaseur boréal',latin:'Bombycilla garrulus',order:'Passériformes',family:'Bombycillidés',r:5,s:'H'},{id:'bergeronnette-citrine',name:'Bergeronnette citrine',latin:'Motacilla citreola',order:'Passériformes',family:'Motacillidés',r:5,s:''},{id:'guillemot-a-miroir',name:'Guillemot à miroir',latin:'Cepphus grylle',order:'Charadriiformes',family:'Alcidés',r:5,s:''},{id:'traquet-isabelle',name:'Traquet isabelle',latin:'Oenanthe isabellina',order:'Passériformes',family:'Muscicapidés',r:5,s:''},{id:'fauvette-eperviere',name:'Fauvette épervière',latin:'Curruca nisoria',order:'Passériformes',family:'Sylviidés',r:5,s:''},{id:'engoulevent-a-collier-roux',name:'Engoulevent à collier roux',latin:'Caprimulgus ruficollis',order:'Caprimulgiformes',family:'Caprimulgidés',r:5,s:''},{id:'grande-outarde',name:'Grande Outarde',latin:'Otis tarda',order:'Otididés',family:'Otididés',r:5,s:''},{id:'heron-cendre',name:'Héron cendré',latin:'Ardea cinerea',order:'Pélécaniformes',family:'Ardéidés',r:5,s:'SN'},{id:'tourterelle-turque',name:'Tourterelle turque',latin:'Streptopelia decaocto',order:'Columbiformes',family:'Columbidés',r:5,s:'SN'},{id:'vautour-fauve',name:'Vautour fauve',latin:'Gyps fulvus',order:'Accipitriformes',family:'Accipitridés',r:5,s:'SN'},{id:'corneille-noire',name:'Corneille noire',latin:'Corvus corone',order:'Passériformes',family:'Corvidés',r:5,s:'SN'},{id:'rougegorge-familier',name:'Rougegorge familier',latin:'Erithacus rubecula',order:'Passériformes',family:'Muscicapidés',r:5,s:'SNH'},{id:'rossignol-philomene',name:'Rossignol philomène',latin:'Luscinia megarhynchos',order:'Passériformes',family:'Muscicapidés',r:5,s:'NM'},{id:'rougequeue-noir',name:'Rougequeue noir',latin:'Phoenicurus ochruros',order:'Passériformes',family:'Muscicapidés',r:5,s:'NM'},{id:'merle-noir',name:'Merle noir',latin:'Turdus merula',order:'Passériformes',family:'Turdidés',r:5,s:'SN'},{id:'mesange-bleue',name:'Mésange bleue',latin:'Cyanistes caeruleus',order:'Passériformes',family:'Paridés',r:5,s:'SN'},{id:'mesange-charbonniere',name:'Mésange charbonnière',latin:'Parus major',order:'Passériformes',family:'Paridés',r:5,s:'SN'},{id:'fauvette-a-tete-noire',name:'Fauvette à tête noire',latin:'Sylvia atricapilla',order:'Passériformes',family:'Sylviidés',r:5,s:'SN'},{id:'pouillot-veloce',name:'Pouillot véloce',latin:'Phylloscopus collybita',order:'Passériformes',family:'Phylloscopidés',r:5,s:'NM'},{id:'moineau-domestique',name:'Moineau domestique',latin:'Passer domesticus',order:'Passériformes',family:'Passérididés',r:5,s:'SN'},{id:'pinson-des-arbres',name:'Pinson des arbres',latin:'Fringilla coelebs',order:'Passériformes',family:'Fringillidés',r:5,s:'SNH'},{id:'chardonneret-elegant',name:'Chardonneret élégant',latin:'Carduelis carduelis',order:'Passériformes',family:'Fringillidés',r:5,s:'SN'},{id:'serin-cini',name:'Serin cini',latin:'Serinus serinus',order:'Passériformes',family:'Fringillidés',r:5,s:'SN'}];
+const DESCS={'pigeon-ramier':{s:'Sédentaire et nicheur très commun. Populations nordiques hivernantes.',d:'Le plus grand pigeon d\'Europe. Gris-bleu avec taches blanches sur le cou et les ailes (visibles en vol). Roucoulement grave et répété.',h:'Forêts, bocages, parcs, villes. Très adaptable. Le plus commun des pigeons de France.',v:'Roucoulement grave : rou-rou-rou-rou-rou répété.'},'pie-bavarde':{s:'Sédentaire et nicheur commun.',d:'Reconnaissable à son plumage noir et blanc contrasté et sa très longue queue irisée de vert et de bleu. L\'un des rares oiseaux à se reconnaître dans un miroir.',h:'Bocages, campagnes, lisières, zones periurbaines. Très adaptable, s\'est bien implantée dans les villes. Nid en dôme de brindilles.',v:'Cri strident et bavard : tcha-tcha-tcha-tcha répété.'},'etourneau-sansonnet':{s:'Sédentaire et nicheur très commun. Populations nordiques hivernantes nombreuses.',d:'Plumage noir irisé de reflets verts et violets, piqué de points clairs en hiver. Bec jaune en été, sombre en hiver. Forme des murmurations spectaculaires à l\'automne.',h:'Prairies, cultures, zones urbaines, bocages. Omniprésent, du littoral à la montagne. Niche dans les cavités.',v:'Imite d\'autres espèces et sons. Cris variés, sifflements, craquètements. Très bruyant en dortoir.'},'canard-colvert':{s:'Sédentaire et nicheur très commun.',d:'Mâle avec tête vert vif irisé, collier blanc, dessus brun-gris, poitrine marron. Femelle brun cryptique. Miroir alaire bleu-violet chez les deux sexes.',h:'Tous types de zones humides. Le canard le plus commun de France. S\'hybride avec de nombreuses espèces.',v:'La femelle émet le célèbre coin-coin. Le mâle un son plus sourd et discret.'},'mouette-rieuse':{s:'Nicheur commun dans les zones humides. Hivernant très commun.',d:'Capuchon brun-chocolat en été (absent en hiver : tache noire sur l\'oreille). Bec et pattes rouges. Grande tache blanche à l\'avant des ailes en vol.',h:'Zones humides pour nicher. En hiver, villes, champs labourés, côtes. Le goéland le plus répandu à l\'intérieur des terres.',v:'Cri caractéristique : kearr strident. Très bruyante en colonie.'},'grand-cormoran':{s:'Sédentaire et nicheur commun sur les côtes et dans les zones humides intérieures.',d:'Grand oiseau noir avec bec crochu, gorge jaune-orangée, tache blanche sur les flancs (en saison). S\'étend les ailes après la pêche pour les sécher.',h:'Côtes, rivières, lacs, réservoirs. Niche en colonies sur les arbres et les falaises. Commun dans toute la France.',v:'Grognements rauques aux colonies.'},'troglodyte-mignon':{s:'Sédentaire et nicheur commun.',d:'Minuscule oiseau brun-roux finement barré, à queue courte souvent dressée verticalement. Malgré sa taille, son chant est extraordinairement puissant.',h:'Forêts, haies, jardins, rochers, zones humides. Fréquente les endroits denses et les tas de bois. Présent du bord de mer jusqu\'en altitude.',v:'Chant extrêmement fort et perlé pour un si petit oiseau, avec un trille roulant caractéristique.'},'bergeronnette-grise':{s:'Sédentaire et nicheur commun. Populations nordiques hivernantes.',d:'Dessus gris, dessous blanc, calotte et bavette noires (mâle en été), longue queue noire et blanche toujours en mouvement de haut en bas. Vol onduleux.',h:'Villages, fermes, bords de rivières, rochers. Niche sur les constructions humaines. Présente dans presque tous les milieux.',v:'Cri de vol : tsiss ou tsizzi répété. Chant gazouillant.'},'buse-variable':{s:'Sédentaire et nicheur très commun.',d:'Rapace trapu au plumage très variable : du brun foncé au presque blanc. Queue barrée, ailes larges et arrondies. Vol plané fréquent sur les thermiques.',h:'Forêts, bocages, campagnes. Le rapace le plus commun de France. Souvent vu perché sur les poteaux électriques.',v:'Cri : piou-piou-piouuu miaulé montant très caractéristique.'},'hirondelle-rustique':{s:'Migrateur nicheur commun. Présent d\'avril à octobre.',d:'Dessus bleu-noir métallique, gorge et front roux-brique, dessous blanc-crème. Longue queue fourchue distinctive. Vole près du sol en rasant prairies et étangs.',h:'Campagnes avec élevage, fermes, villages. Niche dans les bâtiments agricoles. Chasse les insectes en vol.',v:'Chant rapide et gazouillant avec un crépitement caractéristique. Cri d\'alarme : vitt-vitt strident.'},'geai-des-chenes':{s:'Sédentaire et nicheur commun.',d:'Corvidé coloré : plumage brun-rosé, ailes noires avec miroir bleu barré de noir spectaculaire, croupion blanc visible en vol. Huppe érectile mouchetée.',h:'Forêts de feuillus, surtout chênaies. Stocke des milliers de glands en automne, participant à la régénération des forêts.',v:'Cri rauque et strident : krrraak très caractéristique. Imite parfois la Buse variable.'},'pigeon-biset':{s:'Sédentaire et nicheur commun sous ses formes domestique et marronné.',d:'Ancêtre du pigeon domestique. Gris-bleu avec deux barres alaires noires et croupion blanc. Très variable en ville (couleurs multiples issues des races domestiques).',h:'Villes, falaises côtières (forme sauvage). Très commun dans les villes françaises.',v:'Roucoulement grave et répété.'},'faucon-crecerelle':{s:'Sédentaire et nicheur commun.',d:'Mâle avec tête et queue gris-bleu, dessus roux tacheté de noir. Femelle brun-roux barrée. Célèbre pour son vol stationnaire (Saint-Esprit) en quête de proies au sol.',h:'Campagnes, falaises, villes, autoroutes. Le faucon le plus commun de France. Niche dans les cavités et corniches.',v:'Cri : ki-ki-ki-ki répété rapidement.'},'foulque-macroule':{s:'Sédentaire et nicheur très commun.',d:'Noire avec bec et bouclier frontal blanc caractéristique. Doigts lobés (non palmés). Nage et plonge. Querelleuse et bruyante.',h:'Étangs, lacs, rivières. Le rallidé le plus commun et le plus visible de France.',v:'Cri fort : kowk répété. Bruyant en période de reproduction.'},'pic-vert':{s:'Sédentaire et nicheur commun.',d:'Grand pic vert vif dessus, dessous verdâtre-grisâtre, calotte rouge, moustache rouge chez le mâle (noire chez la femelle), croupion jaune visible en vol. Mange principalement des fourmis.',h:'Forêts claires, bocages, parcs, pelouses. Cherche sa nourriture souvent au sol. Commun dans toute la France.',v:'Rire caractéristique : hi-hi-hi-hi... fort et descendant, entendu de loin. Ne tambourine que rarement.'},'goeland-leucophee':{s:'Sédentaire et nicheur commun sur les côtes méditerranéennes et atlantiques.',d:'Ressemble au Goéland argenté mais dos plus sombre gris moyen, pattes jaunes. Bec jaune à point rouge. Le goéland dominant sur les côtes méditerranéennes.',h:'Côtes méditerranéennes et atlantiques. Niche sur les falaises, îles et toits.',v:'Cri : yaou similaire au Goéland argenté.'},'pic-epeiche':{s:'Sédentaire et nicheur commun.',d:'Noir et blanc avec tache rouge sur la nuque (mâle). Sous-caudales rouges caractéristiques. Bec puissant. Tambourine sur les troncs. Le plus commun des pics en France.',h:'Forêts de tous types, parcs, jardins arborés. Creuse ses propres cavités de nidification.',v:'Cri : kick aigu. Tambourinement : roulement rapide de 10-15 coups sur 0,5 seconde.'},'aigrette-garzette':{s:'Nicheur commun dans le sud et l\'ouest. En expansion.',d:'Aigrette entièrement blanche, plus petite que la Grande Aigrette. Bec et pattes noirs, pieds jaunes (caractéristique). Aigrettes nuptiales fines sur le dos.',h:'Zones humides côtières et intérieures. En expansion notable vers le nord depuis les années 1970.',v:'Cri : aaark rauque.'},'grimpereau-des-jardins':{s:'Sédentaire et nicheur commun.',d:'Grimpe les troncs en spirale de bas en haut grâce à sa queue rigide servant d\'appui. Bec fin et courbé. Dessus brun strié, dessous blanc.',h:'Forêts, parcs, jardins, bocages. Le plus commun des deux grimpereaux en plaine. Se niche derrière les écorces décollées.',v:'Chant fin et sifflé, terminé par un trille.'},'verdier-d-europe':{s:'Sédentaire et nicheur commun.',d:'Fringille trapu. Mâle vert-jaune vif avec ailes grises et larges taches jaunes sur les rémiges et la queue. Femelle plus terne, brun-verdâtre. Bec robuste conique.',h:'Haies, lisières, jardins, bocages. Fréquente les mangeoires en hiver. Commun dans toute la France.',v:'Chant complexe mêlant sifflements et gazouillis. Cri : tzwiii traînant caractéristique.'},'cygne-tubercule':{s:'Sédentaire et nicheur commun.',d:'Grand cygne blanc avec bec orange-rouge et tubercule noir à la base du bec. Nage souvent avec les ailes légèrement dressées. Le plus commun en France.',h:'Étangs, rivières, parcs. Commun dans toute la France.',v:'Peu vocal. Sifflements et grognements. Bruissement des ailes en vol.'},'gallinule-poule-d-eau':{s:'Sédentaire et nicheur commun.',d:'Noire avec bec et bouclier frontal rouge, bec à bout jaune. Blanc sur les flancs et sous-caudales. Hoche la tête en marchant.',h:'Zones humides avec végétation dense, bords de rivières, fossés. Très commune.',v:'Cris variés : klurrk, purr-ik. Bruyante.'},'grive-musicienne':{s:'Sédentaire et nicheur commun. Populations nordiques hivernantes.',d:'Dessus brun olivâtre, dessous blanc crème avec taches brunes en forme de V sur la poitrine et le ventre. Dessous des ailes chamois orangé visible en vol.',h:'Forêts, bocages, jardins. Utilise une \'enclume\' (pierre ou racine) pour casser les escargots. Commune dans toute la France.',v:'Chant puissant avec des phrases courtes répétées 2-4 fois.'},'martinet-noir':{s:'Migrateur nicheur commun. Présent de mai à juillet.',d:'Entièrement brun-noir sauf gorge blanche. Faucille caractéristique en vol. Vit presque entièrement en vol (mange, dort, s\'accouple en vol).',h:'Villes, villages. Niche dans les interstices des bâtiments et falaises. En fort déclin par manque de sites de nidification.',v:'Cris stridents : schreiii lors des poursuites en groupe (crises).'},'choucas-des-tours':{s:'Sédentaire et nicheur commun.',d:'Le plus petit corvidé européen. Noir avec nuque et joues gris-argenté, iris blanc pâle caractéristique. Vif et agile, souvent en groupes.',h:'Villes, villages, falaises, cavités dans les arbres. Niche dans les clochers, ruines, rochers. Commun dans toute la France.',v:'Cri : kiaw ou tchak aigu et répété, très reconnaissable.'},'orite-a-longue-queue':{s:'Sédentaire et nicheur commun.',d:'Minuscule oiseau à très longue queue (plus longue que le corps). Plumage rose, blanc et noir. Tête blanche avec sourcil noir large. Se déplace en petites troupes agitées.',h:'Haies, lisières forestières, bocages, jardins avec arbres. Construit un nid en boule de lichens et toiles d\'araignée.',v:'Cris fins et aigus : tsii-tsii-tsii répétés. Bavard, les groupes sont détectables de loin.'},'accenteur-mouchet':{s:'Sédentaire et nicheur commun.',d:'Ressemble superficiellement à un moineau mais bec fin d\'insectivore. Dessus brun strié, tête et poitrine gris-ardoise, flancs brun-roux. Comportement discret, se déplace furtivement au sol.',h:'Haies, bocages, jardins, forêts avec sous-bois denses. Commun partout en France.',v:'Chant fin et rapide, légèrement monotone. Cri : tsii aigu.'},'grebe-huppe':{s:'Sédentaire et nicheur commun.',d:'Grand grèbe avec longue huppe noire et rousse (en saison), plumage brun dessus, blanc dessous. Parades nuptiales spectaculaires. Porte les jeunes sur le dos.',h:'Lacs, étangs, grands cours d\'eau. Le grèbe le plus commun et le plus visible de France.',v:'Cris variés en parade : harr-harr-harr rauque.'},'bouscarle-de-cetti':{s:'Sédentaire dans le sud et l\'ouest. Sensible au gel.',d:'Petit passereau brun-roux, dessous chamois-blanchâtre, queue arrondie souvent dressée. Difficile à voir mais chant retentissant et soudain.',h:'Végétation dense et humide : saulaies, roselières, buissons au bord de l\'eau. Commun dans le sud et remonte vers le nord.',v:'Chant explosif et retentissant : tchip-pitchipit-pitchipit-tchip, émis soudainement depuis la végétation dense.'},'goeland-argente':{s:'Sédentaire et nicheur commun sur les côtes.',d:'Grand goéland blanc et gris avec ailes gris-pâle et bouts noirs à miroir blanc. Bec jaune avec point rouge. Pattes roses. Le goéland côtier le plus commun.',h:'Côtes, ports, villes côtières. Niche sur les falaises et toits. Se déplace parfois loin à l\'intérieur des terres.',v:'Cri : yaou-yaou-yaou.'},'sittelle-torchepot':{s:'Sédentaire et nicheur commun.',d:'Seul oiseau européen à descendre les troncs la tête en bas. Dessus bleu-gris, dessous chamois-orangé, long bandeau noir sur l\'œil. Bec pointu. Rétrécit l\'entrée de son nid avec de l\'argile.',h:'Forêts de feuillus, parcs, jardins avec grands arbres. Commune dans toute la France.',v:'Chant fort et répété : tuitt-tuitt-tuitt. Cris variés et sonores.'},'linotte-melodieuse':{s:'Nicheur commun. Partiellement migrateur, hiverne en groupes.',d:'Mâle avec front et poitrine rouge carmin en été, dos brun-roux. Femelle striée brun-crème sans rouge. Bec gris. Grégaire.',h:'Landes, garrigues, cultures, friches. Niche dans les buissons d\'ajoncs et genêts. Commune sur les causses lozériens.',v:'Chant gazouillant et mélodieux, souvent en groupe.'},'hirondelle-de-fenetre':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Dessus bleu-noir, croupion blanc distinctif, dessous blanc pur. Queue peu fourchue. Se distingue de l\'Hirondelle rustique par le croupion blanc.',h:'Villes, villages, falaises rocheuses. Construit un nid de boue sous les avancées de toits. Chasse les insectes en altitude.',v:'Gazouillis doux et prolongé. Cri : prit répété.'},'grande-aigrette':{s:'Sédentaire et nicheur en hausse. Hivernant commun.',d:'Grand ardéidé entièrement blanc. Longues aigrettes nuptiales. Bec jaune-orangé, pattes noires. Plus grande que l\'Aigrette garzette. Cou replié en vol.',h:'Zones humides variées. En forte expansion. Nouvelles colonies en France chaque année.',v:'Cri de vol : fraank grave.'},'alouette-des-champs':{s:'Nicheur commun dans les grandes plaines. En fort déclin.',d:'Dessus brun strié, dessous blanc chamois, petite huppe érectile. En vol, dessous des ailes blanc et bord postérieur des ailes blanc caractéristiques. Vol stationnaire typique.',h:'Grandes cultures céréalières, prairies, zones agricoles. En déclin marqué depuis les années 1980. Niche à même le sol.',v:'Chant continu et complexe, émis lors du vol planant à haute altitude. Chant emblématique de la campagne française.'},'pipit-farlouse':{s:'Nicheur commun. Hivernant très commun. Migrateur abondant.',d:'Dessus brun strié, dessous chamois avec stries foncées, sourcil chamois clair, pattes roses. Le pipit le plus commun de France.',h:'Prairies, landes, marais, cultures. Très commun dans les espaces ouverts. Présent du bord de mer à la haute montagne.',v:'Chant en vol parachute. Cri : piit ou tsiip.'},'tarier-patre':{s:'Sédentaire et nicheur commun.',d:'Mâle avec tête noire, grand miroir alaire blanc, poitrine orange-roux, dessous blanc. Femelle brun strié avec traces de la livrée mâle. Se tient sur des postes en vue.',h:'Landes, friches, garrigues, bocages, bords de chemins. Très commun dans les milieux ouverts de toute la France.',v:'Chant court et répété depuis un perchoir en vue. Cri : wett-tec ou tacc-tacc caractéristique.'},'milan-noir':{s:'Migrateur nicheur commun. Présent de mars à septembre.',d:'Semblable au Milan royal mais brun foncé et queue légèrement fourchue. Très opportuniste, fréquente les décharges et bords de cours d\'eau.',h:'Vallées fluviales, plans d\'eau, décharges. Commun le long des grandes rivières. Migre en masse vers l\'Afrique en automne.',v:'Cri : hiiii sifflé, différent du Milan royal.'},'roitelet-triple-bandeau':{s:'Sédentaire et nicheur commun dans les forêts méditerranéennes et montagnardes.',d:'Semblable au Roitelet huppé mais avec un large sourcil blanc et une couronne rouge-feu (mâle) ou jaune-orangé (femelle) avec triple bandeau noir. Dessus vert plus brillant.',h:'Forêts de feuillus et mixtes, surtout méditerranéennes. Plus commun dans le sud et l\'est de la France.',v:'Chant descendant en gamme, terminé par un roulement. Différent du Roitelet huppé.'},'martin-pecheur-d-europe':{s:'Sédentaire et nicheur. Commun dans les zones de bonne qualité d\'eau.',d:'L\'un des oiseaux les plus colorés d\'Europe. Dessus bleu turquoise métallique, dessous roux-orangé vif. Bec noir long et pointu. Tête grosse. Plonge à grande vitesse.',h:'Rivières, ruisseaux, canaux, étangs. Indicateur de bonne qualité d\'eau. Creuse son terrier dans les berges.',v:'Cri de vol : tsiih aigu et strident. Chant : sifflements répétés.'},'tadorne-de-belon':{s:'Sédentaire et nicheur commun sur les côtes. En expansion vers l\'intérieur.',d:'Grand canard bariolé. Tête et cou vert-noir irisé, large bande pectorale marron, reste blanc sauf bout de l\'aile noir. Bec rouge avec caroncule chez le mâle.',h:'Côtes, estuaires, zones humides intérieures. Niche dans les terriers de lapins.',v:'Cris variés, sifflements et caquètements.'},'grebe-castagneux':{s:'Sédentaire et nicheur commun.',d:'Le plus petit grèbe. Corps trapu et brun-roux en été avec côtés de la tête et joues châtain, base du bec jaune-vert. Plus terne en hiver. Plonge fréquemment.',h:'Zones humides variées : étangs, rivières calmes, fossés. Très commun partout en France.',v:'Chant caractéristique : trille rapide et descendant hennissant.'},'fauvette-melanocephale':{s:'Sédentaire et nicheur dans le pourtour méditerranéen.',d:'Mâle avec tête entièrement noire, dessous blanc, dos brun, iris rouge. Femelle avec tête brune. Très active et audacieuse.',h:'Garrigues, maquis, vignes, jardins méditerranéens. Commune dans le sud de la France.',v:'Chant très rapide avec notes dures et sifflées. Cri : tett répété souvent.'},'vanneau-huppe':{s:'Nicheur commun. Hivernant et migrateur commun. En déclin.',d:'Reconnaissable à sa huppe noire effilée. Dessus vert métallique, dessous blanc, poitrine noire, sous-caudales orange. Ailes larges et arrondies. Vol papillonnant.',h:'Prairies humides, labours, cultures. En déclin par intensification agricole. Forme de grands groupes en hiver.',v:'Cri plaintif caractéristique : piiou-witt. Parade aérienne avec cris acrobatiques.'},'cisticole-des-joncs':{s:'Sédentaire et nicheur dans le sud. Hivers rigoureux peuvent décimer les populations.',d:'Très petit oiseau brun strié à queue courte souvent dressée. En vol d\'automne et hiver, le mâle monte et descend en battant des ailes.',h:'Prairies humides, bords de rivières, cultures. Commun sur le pourtour méditerranéen et le long des côtes atlantiques.',v:'Chant : zit-zit-zit répété en vol bondissant. Très caractéristique.'},'bergeronnette-des-ruisseaux':{s:'Sédentaire et nicheur commun dans les zones de relief.',d:'Dessus gris-bleuté, dessous jaune vif, bavette noire (mâle en été). Queue plus longue que la Bergeronnette grise. Fréquente les bords de cours d\'eau.',h:'Torrents, rivières rapides, ruisseaux. Présente dans les zones de relief de toute la France. Indicatrice de cours d\'eau propres.',v:'Cri : tsitsi aigu et bref.'},'grive-draine':{s:'Sédentaire et nicheur commun.',d:'La plus grande des grives. Dessus brun-grisâtre, dessous blanc avec de larges taches rondes brun foncé. Dessous des ailes blanc. Vol lourd et onduleux.',h:'Forêts, parcs, grandes pelouses. Chante souvent par mauvais temps (d\'où son surnom \'grive de tempête\'). Commune dans toute la France.',v:'Chant puissant et mélancolique, souvent entonné depuis la cime des arbres par temps venteux.'},'bruant-zizi':{s:'Sédentaire et nicheur dans le sud et l\'ouest de la France.',d:'Mâle avec tête à motif complexe jaune, noir et brun. Dessous jaune-verdâtre, dos brun strié. Ressemble au Bruant jaune mais motif de tête plus contrasté.',h:'Bocages, vignes, garrigues basses, jardins. Répandu dans le sud et l\'ouest de la France.',v:'Chant monotone similaire au Bruant jaune mais syllabe finale moins traînante.'},'sarcelle-d-hiver':{s:'Nicheur rare. Hivernant et migrateur commun.',d:'Le plus petit canard d\'eau douce. Mâle avec tête châtain, masque vert autour de l\'œil, flancs gris finement vermiculés. Femelle brun cryptique. Miroir vert en vol.',h:'Zones humides variées. Hiverne en grand nombre sur les étangs et lagunes de France.',v:'Mâle : sifflement cric-cric caractéristique. Femelle : couac sourd.'},'faisan-de-colchide':{s:'Sédentaire et nicheur commun. Largement introduit pour la chasse.',d:'Mâle spectaculaire avec plumage multicolore : tête verte, face rouge, queue longue barrée. Femelle brun cryptique. Espèce introduite depuis l\'Asie.',h:'Bocages, forêts claires, lisières avec cultures. Commun partout en France grâce aux lâchers de chasse.',v:'Cri sonore du mâle : kok-kok ! accompagné d\'un tambourinage des ailes.'},'coucou-gris':{s:'Migrateur nicheur commun. Présent d\'avril à juillet.',d:'Mâle gris dessus, dessous blanc barré de gris. Femelle brun-roux barrée. Longue queue étagée. Vol ressemble à un faucon. Parasite d\'autres espèces (Rousserolle, Fauvette, Pipit).',h:'Bocages, forêts, landes, marais. Présent dans presque tous les milieux de France.',v:'Le célèbre couc-ou du mâle. La femelle émet une série de notes en bulle sonore.'},'perruche-a-collier':{s:'Sédentaire, populations établies dans plusieurs villes françaises.',d:'Perruche verte avec longue queue, bec rouge massif, collier noir et rose chez le mâle. Introduite d\'Asie. Population en forte expansion.',h:'Parcs urbains, jardins des grandes villes (Paris, Bruxelles, Londres). Populations importantes en Île-de-France.',v:'Cris stridents : kii-aa répétés. Très bruyante.'},'goeland-marin':{s:'Sédentaire et nicheur sur les côtes atlantiques et de la Manche.',d:'Le plus grand goéland. Dos noir, très robuste, bec massif. Tête et dessous blancs. Domine tous les autres goélands.',h:'Côtes rocheuses, îles. Niche sur les falaises. Dominant en termes de taille.',v:'Cri profond et grave : kau-kau.'},'heron-garde-boeufs':{s:'Sédentaire et nicheur en expansion spectaculaire.',d:'Petit héron trapu entièrement blanc avec aigrettes orange en saison nuptiale sur la tête, poitrine et dos. Bec et pattes jaunes. Fréquente le bétail.',h:'Prairies pâturées, zones humides. En expansion depuis l\'Afrique vers le nord depuis les années 1980.',v:'Peu vocal. Cris rauques aux colonies.'},'busard-des-roseaux':{s:'Migrateur nicheur commun dans les zones humides.',d:'Grand rapace long et effilé au vol. Mâle brun avec ailes grises et noires, tête crème striée. Femelle brun chocolat avec tête crème. Vole bas au-dessus des roselières.',h:'Roselières, étangs, rivières. Commun sur les zones humides de toute la France.',v:'Cri : piie-eh ou kiou-kiou.'},'mesange-nonnette':{s:'Sédentaire et nicheur assez commun.',d:'Mésange à calotte et bavette noires, joues et dessous blanchâtres avec flancs beige-rosé. Ressemble à la Mésange boréale mais flancs plus chauds.',h:'Forêts de feuillus humides, bocages, parcs. Préfère les arbres creux pour nicher. Commune dans la moitié nord de la France.',v:'Chant bitonique piu-piu-piu plus aigu que la Mésange charbonnière.'},'chevalier-guignette':{s:'Nicheur commun. Migrateur commun.',d:'Petit limicole brun dessus, blanc dessous. Tache blanche s\'enfonçant sous les ailes (caractéristique). Se balance continuellement d\'avant en arrière.',h:'Bords de rivières, lacs, étangs. Commun le long des cours d\'eau en migration. Nicheur dans les vallées fluviales.',v:'Cri en vol : hi-di-di aigu et répété.'},'canard-souchet':{s:'Nicheur peu commun. Hivernant commun.',d:'Bec spatial très large et aplati (en spatule) caractéristique. Mâle avec tête verte, ventre roux, ailes bleues. Femelle brun cryptique. Filtre l\'eau avec son bec.',h:'Zones humides riches, étangs, marais. Hiverne en bonne quantité. Nicheur localisé dans les plaines.',v:'Mâle : tok-tok grave.'},'roitelet-huppe':{s:'Sédentaire et nicheur commun, surtout dans les forêts de conifères.',d:'L\'un des plus petits oiseaux d\'Europe. Dessus vert-olive, sourcil blanc, couronne orange-rouge (mâle) ou jaune (femelle) bordée de noir. Toujours en mouvement.',h:'Forêts de conifères, surtout épicéas et sapins. Souvent en haute cime. Plus visible en hiver quand il descend.',v:'Chant très aigu : seii-seii-seii-tsirrr souvent inaudible pour les personnes âgées.'},'epervier-d-europe':{s:'Sédentaire et nicheur commun.',d:'Mâle bleu-gris dessus, dessous barré de roux et blanc. Femelle plus grande, brun dessus, dessous barré de brun. Ailes courtes et arrondies pour la chasse en forêt.',h:'Forêts, bocages, jardins. Chasse les passereaux en surprise le long des haies. Commun dans toute la France.',v:'Cri autour du nid : ki-ki-ki rapide.'},'mesange-huppee':{s:'Sédentaire et nicheur commun en montagne et dans les forêts de conifères.',d:'Reconnaissable à sa huppe pointue noirâtre et blanche. Dessus brun-grisâtre, dessous blanc crème avec gorge striée de noir.',h:'Forêts de conifères, principalement sapinières et pessières. Présente en montagne et dans les massifs forestiers de plaine avec résineux.',v:'Cri caractéristique : sit-si-ri répété, avec un son guttural et roulé très reconnaissable.'},'bergeronnette-printaniere':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Dessus verdâtre, dessous jaune vif. Calotte grise (race typique). Queue courte par rapport aux autres bergeronnettes.',h:'Prairies humides, marais, cultures. Niche au sol dans les prairies. Assez commune dans les zones agricoles.',v:'Cri : tsiip aigu en vol.'},'sterne-pierregarin':{s:'Migrateur nicheur commun. Présent d\'avril à octobre.',d:'Sterne gracieuse gris-blanc avec calotte noire, bec rouge à bout noir, pattes rouges. Queue fourchue. Plonge verticalement pour pêcher.',h:'Côtes, îles, bords de lacs et rivières. Niche en colonies. Très commune sur les côtes françaises.',v:'Cri : kreear strident.'},'fuligule-morillon':{s:'Nicheur peu commun. Hivernant très commun.',d:'Mâle noir avec flancs blancs et houppe à la nuque. Femelle brun foncé avec tache blanche à la base du bec. Plonge fréquemment. Miroir alaire blanc en vol.',h:'Lacs, étangs, carrières. Hiverne en très grands groupes sur les plans d\'eau de toute la France.',v:'Mâle : oink nasal.'},'fuligule-milouin':{s:'Nicheur peu commun. Hivernant très commun.',d:'Mâle avec tête châtain-roux, poitrine noire, dos gris vermiculé. Femelle brun terne avec base du bec pâle. Plonge fréquemment.',h:'Lacs, étangs, réservoirs. Hiverne en grands groupes. Nicheur localisé.',v:'Mâle : couaak. Femelle : grognement sourd.'},'bruant-des-roseaux':{s:'Nicheur commun dans les zones humides. Hivernant commun.',d:'Mâle en été avec tête noire, collier blanc et moustache blanche. Dessus brun strié, dessous blanc. Femelle et hiver : striée brun et crème.',h:'Roselières, bords de rivières, marais. En hiver, champs et jardins. Commun dans toute la France.',v:'Chant simple et lent : zip-zip-zip-tiiiii.'},'mesange-noire':{s:'Sédentaire et nicheur commun, notamment en montagne.',d:'Petite mésange noire, blanc et gris. Tête noire avec grande tache blanche sur la nuque (caractéristique), joues blanches, dessous grisâtre.',h:'Forêts de conifères principalement. En montagne, très commune dans les pessières et sapinières. Descend dans les plaines en hiver.',v:'Chant : pet-ou pet-ou répété, plus rapide que la Mésange charbonnière.'},'grand-corbeau':{s:'Sédentaire et nicheur, localement commun en montagne et sur les causses.',d:'Le plus grand passereau du monde. Entièrement noir avec bec très massif, queue en losange en vol, plumes de gorge en hackles hérissables. Vol plané fréquent.',h:'Montagnes, causses, falaises. En Lozère, commun sur les causses et gorges. Territorial et fidèle à son site de nidification. Vit en couple fidèle à vie.',v:'Cri grave et guttural : prruuk ou kronk très caractéristique. Répertoire varié.'},'corbeau-freux':{s:'Sédentaire et nicheur localement commun. Populations hivernantes du nord.',d:'Corvidé entièrement noir avec base du bec déplumée gris-blanchâtre chez l\'adulte, caractère distinctif. Plumage avec reflets bleutés. Niche en colonies (corbeautières).',h:'Campagnes agricoles, bocages, lisières. Niche dans les grands arbres en colonies. Commun dans le nord et le centre de la France.',v:'Cri rauque : kaah plus aigu que la Corneille noire.'},'fauvette-grisette':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Fauvette brune et grise à calotte brune et gorge blanche. Mâle avec calotte grise-brune et joues gris foncé. Queue souvent haussée. Agitée et nerveuse.',h:'Haies, buissons, bocages, friches avec ronces. Niche dans les haies basses. Commune dans toute la France.',v:'Chant rapide et grinçant avec notes stridentes caractéristiques.'},'flamant-rose':{s:'Sédentaire et nicheur commun en Camargue.',d:'Inconfondable avec son plumage rose, ses longues pattes, son long cou et son bec courbé en bas filtrant l\'eau. Le seul flamant nicheur en France.',h:'Lagunes salées, étangs côtiers. La plus grande colonie nicheuse de France est en Camargue. Présent toute l\'année.',v:'Cris nasaux en groupe rappelant des oies.'},'tourterelle-des-bois':{s:'Migrateur nicheur commun. Présent d\'avril à août. En déclin.',d:'La plus petite tourterelle. Dessus écaillé de roux et noir, joues grises, côté du cou avec bandes noires et blanches. Plus vive et élancée que la Tourterelle turque.',h:'Bocages, forêts claires, haies. En déclin important (pression de chasse migratoire, intensification agricole).',v:'Roucoulement doux et somnolent : tourrr-tourrr très ronronnant, l\'un des sons de l\'été.'},'cigogne-blanche':{s:'Migrateur nicheur commun. Populations en forte hausse.',d:'Grand oiseau blanc avec rémiges noires, bec et pattes rouges. Niche au sommet des poteaux, clochers et arbres. Migre en grands groupes en spirale sur les thermiques.',h:'Zones humides, prairies, cultures. Niche dans les villages. Population française passée de quelques couples à plusieurs centaines.',v:'Peu vocal. Claquement de bec lors des parades.'},'tarin-des-aulnes':{s:'Nicheur localement commun en montagne. Hivernant commun en plaine.',d:'Petit fringille jaune-verdâtre strié. Mâle avec calotte et bavette noires, dessus verdâtre strié, dessous jaune. Femelle plus terne. Bandes alaires jaunes en vol.',h:'Forêts de conifères en été (montagne). En hiver, forêts d\'aulnes et de bouleaux en plaine, jardins.',v:'Chant gazouillant contenant un tzway nasal caractéristique.'},'echasse-blanche':{s:'Migrateur nicheur dans le sud. Présent d\'avril à août.',d:'Inconfondable : blanc et noir avec des pattes rose-rouge extraordinairement longues. Silhouette élancée. Bec droit noir.',h:'Zones humides peu profondes : marais salants, lagunes, rizières. Niche dans le sud de la France.',v:'Cri : kyuk-kyuk-kyuk répété fort, très sonore.'},'bernache-du-canada':{s:'Sédentaire nicheur introduit. Populations en expansion.',d:'Grande oie avec tête et cou noirs, joues blanches, corps brun-grisâtre, ventre chamois. Introduite d\'Amérique du Nord.',h:'Parcs urbains, lacs, rivières. En expansion dans toute la France.',v:'Cri : ahounk ou ah-honk grave et sonore.'},'bruant-jaune':{s:'Nicheur peu commun, en fort déclin. Migrateur et hivernant.',d:'Mâle avec tête et dessous jaune vif, dos brun strié, croupion roux. Femelle plus terne et striée. Longue queue avec rectrices blanches visibles en vol.',h:'Bocages, haies, grandes cultures. En fort déclin par perte d\'habitat. Plus commun dans les régions agricoles extensives.',v:'Chant monotone et traînant, souvent décrit comme \'un peu de pain s\'il vous plaît\' avec syllabe finale prolongée.'},'chevalier-gambette':{s:'Nicheur localisé dans les zones humides. Migrateur commun.',d:'Limicole brun-grisâtre avec longues pattes rouges vives et bec rouge à bout noir. Blanc sur le dos visible en vol. Agité et bruyant.',h:'Prairies humides pour nicher. Vasières, estuaires en migration. Assez commun.',v:'Cri d\'alarme : teu-teu-teu répété très fréquemment.'},'milan-royal':{s:'Sédentaire et nicheur. En hausse grâce à la protection.',d:'Rapace élégant roux avec tête blanche striée, longue queue fourchue caractéristique. Dessous roux avec grandes taches blanches sur les ailes. Vol souple et gracieux.',h:'Bocages, forêts mixtes, campagnes. Concentrations hivernales importantes. Protégé depuis les années 1990.',v:'Cri : hiiii-o-hiiii-o miaulé.'},'pouillot-fitis':{s:'Migrateur nicheur commun. Arrive plus tard que le Pouillot véloce.',d:'Très semblable au Pouillot véloce mais pattes plus claires (rosées), sourcil plus marqué. Ne hoche pas la queue.',h:'Forêts claires, bocages, haies, jardins. Migre vers l\'Afrique sub-saharienne en hiver.',v:'Chant mélodieux descendant : suite de notes sifflées douces et cadencées vers le bas.'},'courlis-cendre':{s:'Nicheur peu commun dans les prairies humides. Hivernant et migrateur commun.',d:'Le plus grand limicole d\'Europe (60 cm). Brun strié avec très long bec courbé vers le bas. Croupion blanc visible en vol.',h:'Prairies humides et tourbières pour nicher. Vasières, prés salés, estuaires en hiver.',v:'Chant : série de sifflements ascendants crescendo, l\'un des plus beaux sons de nature.'},'becassine-des-marais':{s:'Nicheur peu commun. Hivernant et migrateur commun.',d:'Limicole trapu au plumage brun et chamois strié. Long bec droit. Sourcil chamois large. S\'envole en zigzag quand dérangé.',h:'Zones humides, prairies tourbeuses, marais. En déclin comme nicheur. Commun en migration et en hiver.',v:'Tambourinement en vol de parade avec les plumes caudales (bêlement). Cri d\'envol : ketch.'},'avocette-elegante':{s:'Nicheur localisé dans les zones humides côtières. Hivernant commun.',d:'Inconfondable : blanc et noir avec long bec retroussé courbé vers le haut et longues pattes bleu-grisâtres. Filtre l\'eau en balayant son bec latéralement.',h:'Lagunes côtières, marais salants, vasières. Niche en colonies dans les zones côtières.',v:'Cri : klouit répété.'},'rousserolle-effarvatte':{s:'Migrateur nicheur commun dans les roselières.',d:'Rousserolle brun-roux dessus, chamois dessous, sourcil crème peu marqué. Grimpe sur les tiges de roseaux. Difficile à voir mais très sonore.',h:'Roselières, saulaies, végétation palustre. Présente sur la plupart des zones humides de France.',v:'Chant très répétitif et long : jrrr-jrrr-karra-karra-tschirr... entendu principalement la nuit.'},'pigeon-colombin':{s:'Sédentaire et nicheur commun.',d:'Ressemble au Pigeon ramier mais sans taches blanches. Gris-bleu avec reflets verts sur le cou. Barres alaires grises peu visibles. Yeux sombres.',h:'Forêts de feuillus avec vieux arbres creux, falaises, carrières. Niche dans les cavités.',v:'Roucoulement grave : rou-ou-rou répété.'},'bruant-proyer':{s:'Nicheur commun dans les grandes cultures. Partiellement migrateur.',d:'Le plus grand bruant européen. Brun strié sans motif de tête distinctif, bec robuste. Chante souvent depuis un fil ou un arbuste en vue.',h:'Grandes cultures céréalières, prairies, garrigues. Commun dans les plaines agricoles de France.',v:'Chant caractéristique en accelerando se terminant par un tintement : si-si-si-si-tirlirlirl.'},'loriot-d-europe':{s:'Migrateur nicheur commun. Présent de mai à août.',d:'Mâle d\'un jaune vif éclatant avec ailes et queue noires. Femelle verdâtre avec dessous strié. L\'un des oiseaux les plus colorés d\'Europe.',h:'Forêts de feuillus, parcs, haies, peupleraies. Difficile à voir malgré ses couleurs (reste dans la canopée). Commun dans toute la France.',v:'Chant flûté et mélodieux : piu-piu-piaou très reconnaissable. Cri : heiiaa rauque et désagréable.'},'rale-d-eau':{s:'Sédentaire et nicheur commun dans les zones humides. Difficile à voir.',d:'Corps comprimé latéralement pour se faufiler dans les roseaux. Dessus brun strié, dessous gris avec flancs barrés de noir et blanc. Long bec rouge courbé.',h:'Roselières, marais, bords de cours d\'eau. Présent dans toute la France mais discret.',v:'Cri : grognement de cochon suivi de kii-kii. Surtout entendu la nuit.'},'hirondelle-de-rivage':{s:'Migrateur nicheur localement commun. Présent d\'avril à septembre.',d:'La plus petite hirondelle. Dessus brun terne, dessous blanc avec un collier brun caractéristique sur la poitrine. Vol rapide et erratique.',h:'Bords de rivières et de plans d\'eau avec berges sableuses. Niche en colonies dans des terriers creusés dans les falaises de sable.',v:'Cri râpeux et nasillard : brrrrt. Beaucoup moins mélodieux que les autres hirondelles.'},'rougequeue-a-front-blanc':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Mâle avec front blanc, gorge et dessus noirs, ventre roux, queue rousse. Femelle brun-olivâtre avec queue rousse et légère teinte orange sur les flancs.',h:'Forêts claires, vieux vergers, bocages avec arbres creux. Niche dans les cavités. Migre vers l\'Afrique sub-saharienne.',v:'Chant bref, commençant par une note plaintive.'},'alouette-lulu':{s:'Nicheur commun dans les landes et milieux ouverts. Partiellement migrateur.',d:'Plus petite que l\'Alouette des champs, huppe plus longue. Sourcil blanc se rejoignant sur la nuque. Pas de blanc sur les ailes. Vol onduleux.',h:'Landes, garrigues, coupes forestières, pelouses sèches. Chante souvent de nuit ou à l\'aube. Présente dans toute la France.',v:'Chant en vol circulaire nocturne ou diurne : lu-lu-lu-lu mélodieux très caractéristique.'},'grive-mauvis':{s:'Hivernant et migrateur de passage commun. Ne niche pas en France métropolitaine.',d:'Petite grive au dessus brun-roux, dessous chamois avec taches sombres. Sourcil chamois clair et dessous des ailes roux caractéristiques en vol.',h:'Bocages, haies, forêts en hiver. Arrive en automne et repart au printemps vers le nord. Se nourrit de baies en hiver.',v:'Chant rarement entendu en France. Cri de vol : seeh aigu.'},'oie-cendree':{s:'Nicheur rare dans quelques zones humides. Hivernant commun.',d:'Grande oie grise, bec et pattes orange-rose. Calotte plus foncée que le reste. Vole en formation en V. L\'ancêtre de l\'oie domestique.',h:'Zones humides, prairies, cultures. Hiverne en grand nombre dans les plaines agricoles.',v:'Cacardement grave et puissant : aang-ang.'},'traquet-motteux':{s:'Migrateur nicheur commun en altitude. Migrateur de passage abondant.',d:'Mâle en été avec dessus gris-bleu, masque noir, gorge et dessous blanc-chamois, large croupion blanc très visible en vol. Femelle plus brune.',h:'Pelouses rases, éboulis, zones rocheuses. Niche en haute montagne. Très commun en migration dans les plaines.',v:'Chant court et grinçant. Cri : ouitt-tac ou chak-chak.'},'hypolais-polyglotte':{s:'Migrateur nicheur commun dans l\'ouest et le sud.',d:'Fauvette au dessus olivâtre-brun, dessous jaune-citron, sourcil jaune peu marqué. Bec large et allongé. Imite d\'autres espèces.',h:'Haies, jardins, bosquets méditerranéens. Présente surtout dans la moitié sud et l\'ouest de la France.',v:'Chant rapide, fort et varié, imitant de nombreuses autres espèces.'},'huppe-fasciee':{s:'Migrateur nicheur commun. Présent d\'avril à août.',d:'Oiseau inconfondable avec sa grande huppe orangée à pointes noires, son plumage brun-rosé et ses ailes et queue noir et blanc contrastées. Long bec courbe.',h:'Campagnes ouvertes avec vieux arbres, vergers, lisières. Niche dans les cavités. Commun dans la moitié sud de la France.',v:'Chant discret : pou-pou-pou grave et répété lui ayant valu son nom.'},'gobemouche-gris':{s:'Migrateur nicheur commun. Présent de mai à septembre.',d:'Petit passereau discret brun-grisâtre dessus, blanchâtre avec stries fines dessous. Chasse les insectes au vol depuis un perchoir en vue, revient toujours au même point.',h:'Forêts claires, parcs, jardins, lisières. Niche sur les treillages, lierre, entrelac de branches.',v:'Chant bref et ténu. Cri : tsee sec et répété.'},'pipit-des-arbres':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Dessus brun olivâtre strié, dessous chamois-blanchâtre avec stries brunes sur la poitrine. Sourcil chamois. Base du bec rosé.',h:'Lisières forestières, landes arborées, clairières. Chante souvent en vol descendant depuis un arbre.',v:'Chant en parachute, terminé par une série de notes sifflées.'},'hirondelle-de-rochers':{s:'Sédentaire et nicheur dans les zones rocheuses du sud et de la montagne.',d:'Grande hirondelle brun-grisâtre dessus, dessous chamois pâle avec taches blanches sur la queue. Queue légèrement fourchue.',h:'Falaises, gorges, viaducs, bâtiments en zone montagneuse. Présente dans les Alpes, Pyrénées, Massif Central et région méditerranéenne.',v:'Cri rauque et fort. Chant complexe mêlant gazouillis et sons nasillards.'},'bouvreuil-pivoine':{s:'Sédentaire et nicheur commun.',d:'Mâle avec poitrine rouge vif, calotte et ailes noires, dos gris, croupion blanc. Femelle similaire mais poitrine brun-rosé. Bec court et arrondi.',h:'Forêts, haies, jardins avec arbustes. Se nourrit de bourgeons, baies et graines. Plutôt discret malgré ses couleurs.',v:'Chant doux et mélancolique, sifflement plaintif. Cri : fiu-fiu sifflé caractéristique.'},'gobemouche-noir':{s:'Migrateur nicheur peu commun. En déclin.',d:'Mâle avec dessus noir, front et grande tache alaire blancs, dessous blanc. Femelle brun-grisâtre avec tache alaire blanche moins nette.',h:'Forêts de feuillus matures avec cavités. Niche dans les trous d\'arbres. Moins commun que le Gobemouche gris.',v:'Chant court avec quelques notes sifflées. Cri : wett répété.'},'pipit-spioncelle':{s:'Nicheur en haute montagne. Hivernant dans les basses altitudes.',d:'Le plus grand des pipits. Dessus gris-brun strié, dessous chamois-rosé avec stries peu marquées. Sourcil blanchâtre. Pattes sombres.',h:'Pelouses et éboulis d\'altitude en été (au-dessus de 1500 m). Descend l\'hiver vers les bords de cours d\'eau, prairies et côtes.',v:'Chant en parachute depuis une hauteur. Cri : vist plus fort que les autres pipits.'},'guepier-d-europe':{s:'Migrateur nicheur commun dans le sud et l\'est. Présent de mai à août.',d:'L\'oiseau le plus coloré de France. Vert, bleu et roux avec gorge jaune et masque noir. Queue avec deux plumes centrales allongées. Chasse les insectes (surtout abeilles) en vol.',h:'Campagnes ouvertes avec talus sableux pour nicher. En expansion vers le nord. Niche en colonies.',v:'Cri de vol caractéristique : prrrrrp roulé, souvent entendu avant d\'être vu.'},'fou-de-bassan':{s:'Sédentaire sur les côtes atlantiques. Nombreux non-nicheurs en mer.',d:'Grand oiseau blanc avec extrémités des ailes noires, tête jaune-chamois, bec bleu-gris. Plonge verticalement à grande vitesse dans la mer. Envergure 1,7 m.',h:'Mer ouverte, côtes. Grosse colonie sur l\'île Rouzic (Bretagne). Fréquent en mer tout au long de l\'année.',v:'Cris rauques aux colonies.'},'pic-noir':{s:'Sédentaire et nicheur commun dans les grandes forêts.',d:'Le plus grand pic d\'Europe. Entièrement noir avec calotte rouge (mâle entier, femelle seulement la nuque). Bec puissant ivoire. Vol onduleux prononcé.',h:'Grandes forêts de hêtres et de résineux. Creuse de grandes cavités utilisées ensuite par de nombreuses espèces.',v:'Cri : kliii fort et mélancolique. Tambourinement : roulement lent et puissant de 2-3 secondes.'},'pic-mar':{s:'Sédentaire et nicheur assez commun.',d:'Ressemble au Pic épeiche mais calotte entièrement rouge, sans plage noire autour de la joue, sous-caudales rose pâle. Bec plus fin.',h:'Vieilles chênaies et hêtraies. Indicateur de vieilles forêts. Présent dans toute la France.',v:'Cri : quii nasillard et descendant. Tambourinement plus rapide que le Pic épeiche.'},'fauvette-des-jardins':{s:'Migrateur nicheur commun. Présent de mai à août.',d:'La plus terne des fauvettes : uniformément brun-olivâtre dessus, chamois dessous, sans motif distinctif. Bec robuste. Grosse tête arrondie.',h:'Forêts claires, haies denses, jardins, bocages. Nicheur commun dans toute la France.',v:'Chant grave, doux et continu, souvent comparé à une conversation à voix basse.'},'pie-grieche-ecorcheur':{s:'Migrateur nicheur commun. Présent d\'avril à septembre.',d:'Mâle avec dessus roux, tête grise, masque noir, dessous blanc-rosé. Femelle plus terne, brun-roux. Embroche ses proies sur des épines.',h:'Haies, bocages, lisières, garrigues. Commun dans toute la France dans les zones avec haies denses.',v:'Chant varié incluant des imitations. Cri : cheurr rauque.'},'cochevis-huppe':{s:'Sédentaire et nicheur dans le sud et l\'ouest de la France.',d:'Longue huppe érectile caractéristique, dessus brun strié, dessous chamois strié, bec légèrement courbé. Fréquente les sols découverts.',h:'Zones urbaines et périurbaines, cultures, terrains vagues, plages. Commun dans les villes du pourtour méditerranéen.',v:'Chant varié et mélodieux. Cri : vliet ou dri-dri-drit.'},'moineau-friquet':{s:'Sédentaire et nicheur localement commun, en déclin.',d:'Les deux sexes ressemblent au mâle Moineau domestique. Calotte brun-marron (non grise), tache noire sur joues blanches, deux barres alaires blanches.',h:'Campagnes, bocages, vergers, lisières. Niche dans les cavités d\'arbres et nichoirs. En déclin en Europe occidentale.',v:'Cri : tek tek plus sec que le Moineau domestique.'},'faucon-hobereau':{s:'Migrateur nicheur commun. Présent de mai à septembre.',d:'Faucon élancé au dessus ardoise, dessous blanc strié de noir, cuisses et sous-caudales roux vif. Chasse les hirondelles et martinets en vol, et capture les grands insectes.',h:'Lisières forestières, bocages, zones humides. Réutilise souvent les vieux nids de corvidés.',v:'Cri : ki-ki-ki plus aigu que le Faucon crécerelle.'},'grive-litorne':{s:'Hivernant commun et migrateur de passage. Niche très localement dans le nord-est.',d:'Grande grive très reconnaissable : tête gris-bleu, dos marron, croupion gris, dessous chamois-orangé tacheté de noir. Niche en colonies bruyantes.',h:'Bocages, prairies, vergers, campagnes ouvertes en hiver. Forme des groupes parfois importants. Mange des baies et vers de terre.',v:'Cri de vol : chak-chak rauque très caractéristique. Chant fort et grinçant.'},'heron-pourpre':{s:'Migrateur nicheur peu commun.',d:'Héron élancé au plumage roux-brun avec bandes noires longitudinales sur le cou. Tête noire avec plumes de nuque prolongées. Plus svelte que le Héron cendré.',h:'Grandes roselières, marais. Présent dans le sud et le centre de la France. Hiverne en Afrique.',v:'Cri de vol : karak rauque, plus aigu que le Héron cendré.'},'pouillot-de-bonelli':{s:'Migrateur nicheur commun dans les montagnes.',d:'Dessus gris-verdâtre, dessous blanc pur, croupion jaunâtre visible. Sourcil blanc peu marqué.',h:'Forêts de montagne (feuillus et résineux mélangés). Commun dans les Alpes, Pyrénées, Massif Central et Vosges.',v:'Chant : trille rapide sur une seule note, suivi de notes sifflées caractéristiques.'},'circaete-jean-le-blanc':{s:'Migrateur nicheur commun dans les zones de garrigue.',d:'Grand rapace spécialisé dans la chasse aux reptiles. Dessous blanc avec taches brunes, dessus brun. Grande tête ronde. Vole souvent en vol stationnaire.',h:'Garrigues, causses, maquis. Commun dans le Massif Central et la moitié sud de la France. Hiverne en Afrique.',v:'Cri flûté mélodieux : piu-piu-pioo.'},'pic-epeichette':{s:'Sédentaire et nicheur peu commun.',d:'Le plus petit pic d\'Europe. Noir et blanc sans rouge (mâle avec calotte rouge). Joues blanches avec ligne oculaire noire. Très actif.',h:'Forêts de feuillus et mixtes, vergers. Explore les petites branches. Moins commun que le Pic épeiche.',v:'Cri : ki-ki-ki-ki répété. Tambourinement léger et rapide.'},'faucon-pelerin':{s:'Nicheur peu commun, en hausse. Hivernant.',d:'Silhouette en ancre en vol. Dessus ardoise foncé, dessous blanc barré de sombre, moustache noire large. Le vol en piqué peut dépasser 320 km/h, faisant de lui l\'animal le plus rapide.',h:'Falaises, villes (clochers, immeubles), côtes. En expansion grâce à la protection. Nicheur en milieu urbain de plus en plus fréquent.',v:'Cri : kiak-kiak-kiak strident autour du nid.'},'bihoreau-gris':{s:'Migrateur nicheur commun dans les zones humides.',d:'Héron trapu et nocturne. Adulte avec calotte et dos noirs, dessous et joues blancs, flancs gris. Yeux rouge-sang. Immature brun strié difficile à identifier.',h:'Zones humides, forêts galeries, roselières. Niche en colonies. Actif principalement la nuit.',v:'Cri de vol nocturne : kowak rauque, souvent entendu avant d\'être vu.'},'bondree-apivore':{s:'Migrateur nicheur commun. Présent de mai à août.',d:'Ressemble à la Buse variable mais tête plus petite et allongée couverte d\'écailles protectrices, queue plus longue barrée. Plumage très variable.',h:'Forêts mixtes avec clairières. Déterre les nids de guêpes et bourdons pour se nourrir des larves. Hiverne en Afrique tropicale.',v:'Cri : piuuu flûté, différent de la Buse.'},'bernache-cravant':{s:'Hivernant commun sur les côtes atlantiques.',d:'Petite oie sombre. Tête et cou noirs avec taches blanches sur le côté du cou. Corps brun-gris foncé, ventre et dessous de la queue blancs.',h:'Estuaires, vasières côtières. Hiverne exclusivement sur les côtes. Se nourrit d\'herbe marine (zostères).',v:'Criailleries douces et nasales : ronronnement de groupe.'},'grue-cendree':{s:'Migrateur de passage et hivernant très commun. Nicheur accidentel.',d:'Grand oiseau gris (160 cm) avec calotte rouge, gorge noire, plumes tertiaires en queue de cheval. Cou droit en vol (contrairement aux hérons). Migre en groupes de V.',h:'Étapes migratoires dans les plaines de Champagne (Lac du Der) et Landes. Migre en octobre-novembre et février-mars.',v:'Cri trompettant : krouh ou gaar très sonore, entendu de loin lors des passages.'},'busard-saint-martin':{s:'Nicheur peu commun. Hivernant commun.',d:'Mâle gris pâle avec bouts des ailes noirs et croupion blanc. Femelle brun strié avec croupion blanc caractéristique. Vol léger et élégant.',h:'Landes, cultures, prairies, zones humides. En hiver, se rassemble dans des dortoirs communs dans les roselières.',v:'Cri : ki-ki-ki aigu surtout près du nid.'},'tarier-des-pres':{s:'Migrateur nicheur peu commun, en déclin. Niche dans les prairies.',d:'Mâle avec dessus brun strié, sourcil blanc, gorge et poitrine orangées, flancs chamois. Femelle plus terne.',h:'Prairies humides non intensives, bords de cours d\'eau. En fort déclin par disparition des prairies extensives.',v:'Chant bref depuis un brin d\'herbe ou en vol.'},'chouette-hulotte':{s:'Sédentaire et nicheur commun. Rapace nocturne le plus abondant.',d:'Grande chouette ronde sans aigrettes. Yeux noirs. Plumage brun avec deux formes : brun-roux et gris. Tête large, disque facial. La plus répandue des chouettes françaises.',h:'Forêts, parcs, jardins, vieilles granges. Présente dans presque tous les milieux arborés de France.',v:'Célèbre hululement : hou-hou-hou-hou-houuuu. Cri de la femelle : kou-witt strident.'},'perdrix-rouge':{s:'Sédentaire et nicheur commun dans le sud et le centre.',d:'Bec et pattes rouges, collier noir, flancs barrés de châtain et blanc, joues blanches. Corps trapu. Court plutôt que voler. Niche au sol.',h:'Garrigues, causses, vignes, cultures. Commun sur les causses lozériens. Espèce de chasse importante.',v:'Cri répété : chaker-chaker ou carrk-chakerr caractéristique.'},'martinet-a-ventre-blanc':{s:'Migrateur nicheur dans les montagnes. Présent de mai à août.',d:'Grand martinet. Dessus brun-noir, ventre et dessous des ailes blancs caractéristiques. Plus grand que le Martinet noir avec queue légèrement fourchue.',h:'Falaises de montagne et gorges. Niche en colonies dans les parois rocheuses des Alpes, Pyrénées et Massif Central.',v:'Cri moins strident que le Martinet noir : tri-tri-tri.'},'balbuzard-pecheur':{s:'Migrateur nicheur rare. Hivernant rare. Migrateur de passage commun.',d:'Grand rapace pêcheur. Dessus brun, dessous blanc avec collier brun, tête blanche avec masque sombre. Plonge les pattes en avant pour attraper les poissons.',h:'Lacs, rivières, étangs, zones côtières. Quelques dizaines de couples nicheurs en France. Nombreux en migration.',v:'Cri : kyou-kyou-kyou sifflé.'},'fauvette-pitchou':{s:'Sédentaire et nicheur dans le sud de la France.',d:'Petite fauvette sombre. Mâle avec tête noire, dos brun-roux, dessous chamois-blanchâtre, iris rouge. Femelle avec tête brune. Queue souvent dressée.',h:'Landes à bruyères, garrigues, maquis, pins pinhasters. Commune dans le Massif Central, les garrigues méridionales et les Landes.',v:'Chant rapide avec des notes caractéristiques dures. Cri : tett sec et répété.'},'sarcelle-d-ete':{s:'Migrateur nicheur peu commun. En déclin.',d:'Mâle avec large sourcil blanc sur tête brun-chocolat, flancs brun strié. Femelle semblable à la Sarcelle d\'hiver. En vol, dessus des ailes bleu-gris (mâle).',h:'Zones humides avec végétation dense. Niche dans les prairies humides. En déclin important.',v:'Mâle : cri sec répété tet-tet.'},'pluvier-dore':{s:'Hivernant et migrateur commun. Nicheur très rare.',d:'Dessus brun-or et noir moucheté, dessous noir (en saison) ou blanc (en hiver). Grand sourcil blanc. Vole vite en groupes compacts.',h:'Prairies, labours, zones humides en hiver. Grands groupes dans les grandes plaines en hiver.',v:'Cri mélancolique : pliuu sifflé.'},'bec-croise-des-sapins':{s:'Sédentaire et nicheur irrégulier selon les années de cônes. Parfois irruptif.',d:'Bec croisé unique permettant d\'extraire les graines de cônes de conifères. Mâle rouge brique, femelle vert-grisâtre. Bec dont les pointes se croisent distinctement.',h:'Forêts de conifères. Niche parfois en hiver si les cônes sont abondants. Effectue des irruptions lors de famines de cônes dans les forêts nordiques.',v:'Cri : jip-jip répété. Chant complexe incluant sifflements et gazouillis.'},'oedicneme-criard':{s:'Migrateur nicheur commun dans le sud. Présent d\'avril à septembre.',d:'Limicole cryptique brun strié avec grands yeux jaunes. Genoux saillants et pattes épaisses. Active surtout au crépuscule et la nuit.',h:'Zones arides et pierreuses, garrigues, grandes cultures. Niche au sol dans les espaces découverts du sud.',v:'Cri crépusculaire retentissant : courlieu ou kiii-kiii très caractéristique.'},'rousserolle-turdoide':{s:'Migrateur nicheur commun dans les grandes roselières.',d:'Grande rousserolle brun-roux dessus, dessous chamois-blanchâtre. Nettement plus grande que la Rousserolle effarvatte. Bec robuste.',h:'Grandes roselières de plaine. Présente sur les grandes zones humides de France. Mange parfois des grenouilles et petits poissons.',v:'Chant puissant et strident : karak-karak-karra-karra très fort, entendu de loin.'},'grimpereau-des-bois':{s:'Sédentaire et nicheur commun en montagne et dans les forêts de conifères.',d:'Très semblable au Grimpereau des jardins. Bec légèrement moins courbé, chant différent. Les deux espèces difficiles à distinguer sur le terrain.',h:'Forêts de conifères et mixtes, surtout en altitude. Présent dans les Alpes, Pyrénées, Vosges et Massif Central.',v:'Chant : suite de notes sifflées se terminant différemment du Grimpereau des jardins.'},'aigle-royal':{s:'Sédentaire et nicheur, localement commun en montagne.',d:'Immense rapace brun foncé avec nuque dorée chez l\'adulte. Envergure jusqu\'à 2,4 m. En vol, ailes longues et larges à bout digité, queue longue.',h:'Montagnes, causses, grandes forêts. Présent dans les Alpes, Pyrénées, Massif Central (Lozère notamment). Territoire de plusieurs dizaines de km².',v:'Cri peu fréquent : tchip ou kyip relativement discret pour sa taille.'},'pipit-rousseline':{s:'Migrateur nicheur dans le sud de la France.',d:'Dessus brun-roux vif, dessous chamois avec stries légères, sourcil crème bien marqué. Plus roux et contrasté que les autres pipits.',h:'Garrigues, maquis, pelouses sèches méditerranéennes. Niche dans les zones ouvertes du pourtour méditerranéen.',v:'Chant en vol avec cri répété tchiip.'},'rollier-d-europe':{s:'Migrateur nicheur peu commun dans le sud. Présent de mai à août.',d:'Plumage bleu-turquoise vif avec dos brun-roux. En vol, ailes turquoise et noires éclatantes. Bec noir robuste. Se tient sur des perchoirs dégagés.',h:'Campagnes ouvertes avec vieux arbres, garrigues. Présent surtout dans le sud-ouest et le centre-sud de la France.',v:'Cri rauque : rrak ou krak répété.'},'fauvette-passerinette':{s:'Migrateur nicheur dans le sud de la France.',d:'Petite fauvette avec tête grise et arc oculaire blanc caractéristique. Ressemble à la Fauvette mélanocéphale mais sans noir. Iris orangé-rouge.',h:'Garrigues basses, chênes verts, figuiers, vignes. Commune en zone méditerranéenne.',v:'Chant rapide avec notes très aigues et raclements.'},'guifette-noire':{s:'Migrateur nicheur commun dans les zones humides. Présent de mai à août.',d:'Corps gris sombre et noir en saison (blanc dessous hors saison), bec noir, pattes sombres. Queue peu fourchue. Vole en surface pour capturer des insectes.',h:'Étangs, marais, rivières. Niche en colonies flottantes. Commune dans les zones humides de France.',v:'Cri : kik ou kierk aigu.'},'perdrix-grise':{s:'Sédentaire et nicheur commun dans les grandes plaines. En déclin.',d:'Corps gris-brun strié avec tête et gorge orangées, fer à cheval brun sur le ventre (mâle), flancs barrés. Bec et pattes grisâtres.',h:'Grandes cultures céréalières, bocages. En fort déclin par intensification agricole. Plus commune dans le nord de la France.',v:'Cri strident : kirrk-it répété.'},'gorgebleue-a-miroir':{s:'Migrateur nicheur localement commun. Hivernant rare.',d:'Mâle avec gorge bleue ornée d\'un miroir blanc ou roux, bordée de noir et roux. Femelle avec gorge blanchâtre à moustache sombre. Queue rousse.',h:'Roseraies, saulaies, bords de cours d\'eau, zones humides. Niche dans les marais et ripisylves.',v:'Chant nocturne mélodieux, imitateur.'},'cincle-plongeur':{s:'Sédentaire et nicheur dans les cours d\'eau rapides. Commun en montagne.',d:'Seul passereau capable de marcher sous l\'eau. Corps trapu brun foncé avec gorge et poitrine blanc pur. Queue courte souvent relevée. Cligne souvent des yeux blancs.',h:'Torrents et rivières à eaux vives et bien oxygénées. Présent dans les Alpes, Pyrénées, Massif Central et Vosges. Indicateur de bonne qualité d\'eau.',v:'Chant fort et métallique, entendu même par-dessus le bruit du torrent. Cri : zitt sec et bref en vol.'},'busard-cendre':{s:'Migrateur nicheur peu commun. En déclin.',d:'Mâle gris avec deux barres alaires noires, dessous blanc strié. Femelle ressemble au Busard Saint-Martin femelle mais avec marques faciales différentes.',h:'Grandes cultures céréalières, landes, garrigues. Niche souvent dans les céréales (nids menacés par les moissons). Protégé.',v:'Cri : kiou-kiou aigu.'},'torcol-fourmilier':{s:'Migrateur nicheur peu commun. Présent d\'avril à août.',d:'Petit oiseau brun vermiculé d\'apparence cryptique, ressemblant à de l\'écorce. Yeux perçants. Ne creuse pas (utilise des cavités existantes). Tord le cou de façon caractéristique.',h:'Vergers, bocages, jardins avec vieux arbres. Mange principalement des fourmis. En déclin.',v:'Chant : série de notes nasales répétées quii-quii-quii, rappelant le Faucon crécerelle.'},'gypaete-barbu':{s:'Sédentaire et nicheur très rare. Espèce protégée.',d:'Envergure jusqu\'à 2,9 m. Adulte avec dessus noir et gris, dessous roux-orangé, tête blanche avec moustaches noires, iris rouge. Laisse tomber les os sur des rochers pour les briser.',h:'Hautes montagnes (Alpes, Pyrénées, Corse). Population française de quelques dizaines de couples. En augmentation grâce à la protection.',v:'Peu vocal. Cris aigus rares.'},'plongeon-catmarin':{s:'Hivernant et migrateur commun. Nicheur très rare.',d:'Le plus petit plongeon. En hiver, dessus gris-brun, dessous blanc. Bec fin et légèrement retroussé. Nage souvent profondément dans l\'eau.',h:'Côtes maritimes, grands lacs et réservoirs en hiver. Très commun en migration sur les côtes.',v:'Peu vocal en dehors de la reproduction.'},'autour-des-palombes':{s:'Sédentaire et nicheur peu commun.',d:'Grand accipiter robuste. Adulte brun-gris dessus, dessous finement barré de gris. Femelle nettement plus grande que le mâle. Chasse en forêt jusqu\'aux pigeons et lapins.',h:'Grandes forêts de toutes essences. Plus discret que l\'Épervier. Peu commun dans toute la France.',v:'Cri : ki-ki-ki plus grave et lent que l\'Épervier.'},'elanion-blanc':{s:'Sédentaire et nicheur en expansion, localement commun dans le sud-ouest.',d:'Petit rapace élégant gris perle dessus, blanc dessous, ailes noires en dessous, iris rouge vif. Vol stationnaire fréquent. Chasse les campagnols.',h:'Zones agricoles ouvertes, bocages, garrigues. En expansion depuis les Pyrénées-Atlantiques.',v:'Cri : ouit-ouit sifflé répété.'},'fauvette-babillarde':{s:'Migrateur nicheur assez commun.',d:'Petite fauvette grise. Mâle avec calotte et nuque gris cendré, dos brun, dessous blanc-grisâtre. Iris blanc-jaunâtre. Très agitée.',h:'Haies d\'arbustes variés, jardins, bocages. Migratrice tardive arrivant en mai.',v:'Chant rapide et bavard avec note sèche tcha-tcha répétée caractéristique.'},'caille-des-bles':{s:'Migrateur nicheur commun. Le seul gallinacé migrateur d\'Europe.',d:'La plus petite perdrix. Brun strié cryptique. Mâle avec gorge à motif sombre. Très difficile à voir. Souvent entendue mais rarement observée.',h:'Grandes cultures céréalières, prairies. Niche au sol dans les champs. Migre vers l\'Afrique en automne.',v:'Chant typique : pit-perlit-pit répété sans cesse dans les champs, le jour et la nuit.'},'bruant-fou':{s:'Sédentaire et nicheur dans les zones rocheuses de montagne.',d:'Mâle avec tête grise, sourcil blanc, dos brun strié, dessous chamois-roussâtre. Femelle plus terne. Fréquente les pentes rocheuses ensoleillées.',h:'Versants rocheux, falaises, carrières, vignes en terrasses. Présent dans les Alpes, Pyrénées, Massif Central et régions méditerranéennes.',v:'Chant court et répété depuis un rocher en vue.'},'pie-grieche-a-tete-rousse':{s:'Migrateur nicheur dans l\'est et le sud-est de la France.',d:'Mâle avec tête et nuque rousses, masque noir, dos gris, ailes noires à miroir blanc. Femelle plus terne. La plus colorée des pie-grièches françaises.',h:'Lisières de forêts, bocages en plaine de l\'est et du nord-est de la France.',v:'Chant varié mêlant sifflements et imitations.'},'pouillot-siffleur':{s:'Migrateur nicheur assez commun.',d:'Pouillot avec dessus vert vif, sourcil jaune-citron bien marqué, gorge et flancs jaune-verdâtre, ventre blanc pur. Plus grand et plus coloré que les autres pouillots.',h:'Forêts de feuillus matures avec sous-bois peu dense. Préfère les grandes futaies de hêtres et de chênes.',v:'Chant très reconnaissable : trille sifflé ascendant ressemblant à une pièce de monnaie tournant sur un plateau.'},'locustelle-tachetee':{s:'Migrateur nicheur peu commun.',d:'Petit passereau brun strié, dessous blanchâtre avec stries brun foncé sur la poitrine. Queue arrondie souvent baissée. Reste dissimulé dans la végétation dense.',h:'Friches humides, prairies à grandes herbes, tourbières. Discrète, souvent entendue mais rarement vue.',v:'Chant en crécelle continu : trrrrrrrr ressemblant à un insecte. Émis depuis une perche cachée.'},'petit-duc-scops':{s:'Migrateur nicheur commun dans le sud. Présent d\'avril à septembre.',d:'Le plus petit rapace nocturne d\'Europe. Plumage brun-gris très mimétique d\'écorce. Petites aigrettes. Difficile à voir. Yeux jaunes.',h:'Vieux arbres des plaines méridionales : oliviers, platanes, chênes liège. Commun dans le sud de la France.',v:'Chant monotone répété : tiou-tiou-tiou (un coup par seconde), entendu toute la nuit.'},'panure-a-moustaches':{s:'Sédentaire et nicheur localement commun dans les grandes roselières.',d:'Petit passereau des roseaux au plumage brun-roux et chamois. Mâle avec tête grise et longue moustache noire très caractéristique. Queue longue.',h:'Grandes roselières. Effectue des irruptions automnales dispersant les populations. Localisé en France.',v:'Cri : ping métallique caractéristique. Chant doux et peu puissant.'},'faucon-emerillon':{s:'Hivernant commun. Niche très rarement en France.',d:'Le plus petit faucon européen. Mâle bleu-gris dessus, femelle brun strié. Vol rapide et direct, chasse les petits passereaux en poursuite. Silhouette ramassée.',h:'Plaines ouvertes, bocages, zones côtières en hiver. Arrive en octobre et repart en mars.',v:'Cri : ki-ki-ki-ki rapide.'},'puffin-des-anglais':{s:'Nicheur sur les côtes bretonnes. Très commun en mer.',d:'Dessus brun-noir, dessous blanc. Vole en vaguant sur les vagues avec les ailes raides. Migration en grands nombres en automne.',h:'Mer, archipels bretons. Niche dans des terriers sur les îles.',v:'Cris nocturnes aux colonies : tchi-tchi-koua stridents.'},'venturon-montagnard':{s:'Sédentaire et nicheur en montagne. Commun dans les Alpes et les Pyrénées.',d:'Petit serin verdâtre des montagnes. Mâle vert-jaune vif dessus, jaunâtre dessous, sourcil jaune. Femelle plus terne.',h:'Landes subalpines, forêts claires de montagne, éboulis végétalisés. Présent surtout dans les Alpes, Pyrénées et Massif Central.',v:'Chant gazouillant similaire au Serin cini mais plus métallique.'},'accenteur-alpin':{s:'Sédentaire en montagne, descend en altitude plus basse en hiver.',d:'Grand accenteur robuste. Dessus brun strié, gorge blanche avec collier de petites taches noires, flancs roux. Bec jaune à la base.',h:'Zones rocheuses et pelouses d\'altitude (au-dessus de 1800 m en été). Alpes, Pyrénées, parfois Massif Central. Descend dans les vallées en hiver.',v:'Chant mélodieux, court et répété. Cri : prrrit caractéristique.'},'effraie-des-clochers':{s:'Sédentaire et nicheur commun.',d:'Visage en cœur blanc distinctif, dessus doré et gris, dessous blanc pur. Yeux noirs. Vole silencieusement la nuit grâce aux plumes adaptées.',h:'Clochers d\'église, granges, greniers. Mange principalement des campagnols. Commun dans les campagnes françaises.',v:'Cri : chriiik strident et déchirant.'},'martinet-pale':{s:'Migrateur nicheur dans le sud. Présent de mai à août.',d:'Ressemble au Martinet noir mais plus pâle, gorge plus grande blanche. Rémiges plus pâles. Difficile à distinguer en vol.',h:'Falaises, villages et villes du pourtour méditerranéen. Souvent mêlé aux Martinets noirs.',v:'Cris moins stridents que le Martinet noir.'},'cigogne-noire':{s:'Migrateur nicheur rare et discret.',d:'Entièrement noire métallique avec ventre blanc, bec et pattes rouges. Plus petite et plus discrète que la Cigogne blanche. Fuit la présence humaine.',h:'Grandes forêts avec rivières, zones humides. Niche dans les forêts du Massif Central, des Vosges et du sud-ouest.',v:'Cri flûté : hliou mélodieux.'},'blongios-nain':{s:'Migrateur nicheur peu commun. Le plus petit héron d\'Europe.',d:'Très petit héron. Mâle avec dos noir, ailes rousses avec grande tache chamois. Femelle brun-roux striée. Grimpe sur les roseaux.',h:'Roselières, végétation palustre dense. Migre vers l\'Afrique. En déclin.',v:'Chant répétitif : croâ-croâ grave comme une grenouille.'},'pie-grieche-meridionale':{s:'Sédentaire et nicheur dans le sud et le centre de la France.',d:'Grande pie-grièche gris cendré, masque noir, ailes noires avec miroir blanc, dessous blanc pur.',h:'Garrigues, landes à buissons épineux, bocages méditerranéens. Présente dans le Massif Central et la moitié sud.',v:'Chant varié avec imitations. Cri : charr strident.'},'engoulevent-d-europe':{s:'Migrateur nicheur commun. Présent de mai à août.',d:'Plumage cryptique brun-gris vermiculé mimant parfaitement l\'écorce. Immense bouche pour capturer les insectes de nuit. Nocturne, difficile à voir le jour.',h:'Landes, forêts claires, maquis, coupes forestières. Niche au sol. Commun dans les zones de bruyères de toute la France.',v:'Chant nocturne : ronronnement vibrant continu, mécanique, ressemblant à un moteur lointain.'},'butor-etoile':{s:'Sédentaire et nicheur rare. Hivernant.',d:'Grand héron cryptique aux couleurs de jonc. Brun-jaunâtre finement vermiculé. Adopte une posture d\'étirement caractéristique quand il est dérangé, bec pointé vers le ciel.',h:'Grandes roselières. En fort déclin. Espèce protégée. Quelques dizaines de chanteurs en France.',v:'Chant de nuit et d\'aube : boum-boum très grave, s\'entendant à plusieurs km.'},'sizerin-flamme':{s:'Hivernant irrégulier, parfois commun en années d\'irruption.',d:'Petit fringille brun strié. Calotte rouge vif caractéristique. Mâle avec poitrine rose en saison. Plus petit que la Linotte.',h:'Forêts de bouleaux, aulnaies, mangeoires en hiver. Irruptions depuis le nord en hiver selon la disponibilité des graines.',v:'Cri en vol : tchettchett roulé caractéristique.'},'hibou-moyen-duc':{s:'Sédentaire et nicheur peu commun. Hivernant.',d:'Hibou de taille moyenne avec longues aigrettes noires bien visibles. Yeux orange vif. Plumage brun strié.',h:'Forêts et bosquets dans les campagnes. Se repose collé aux troncs le jour. Forme des dortoirs collectifs en hiver.',v:'Chant : hou grave, espacé.'},'fauvette-orphee':{s:'Migrateur nicheur dans le sud et le centre de la France.',d:'Grande fauvette au dessus brun-gris, dessous blanc-rosé, iris rouge-orangé avec cercle oculaire blanc.',h:'Garrigues, maquis, bosquets, vignes. Commune dans le sud et remonte dans le Massif Central.',v:'Chant mélodieux et varié, rappelant la Fauvette à tête noire.'},'fauvette-a-lunettes':{s:'Migrateur nicheur localement dans le Massif Central et le sud.',d:'Petite fauvette avec cercle oculaire blanc-rosé très marqué. Dessus brun, dessous chamois rosé.',h:'Garrigues, landes à genêts, maquis. Présente dans le Massif Central, Pyrénées et région méditerranéenne.',v:'Chant court et rapide avec notes grinçantes.'},'percnoptere-d-egypte':{s:'Migrateur nicheur rare dans les zones rocheuses du sud.',d:'Petit vautour blanc avec rémiges primaires noires et tête nue jaune. Ailes pointues en vol. Immature brun. Utilise des outils (pierres) pour casser les œufs.',h:'Falaises et zones d\'élevage du sud de la France (Pyrénées, Grands Causses). Population française de quelques dizaines de couples.',v:'Peu vocal. Cris rares.'},'becasse-des-bois':{s:'Nicheur peu commun. Hivernant et migrateur commun.',d:'Grand limicole cryptique au plumage brun-roux finement vermiculé. Long bec droit tactile. Grands yeux hauts sur la tête donnant une vision à 360°. Difficile à voir.',h:'Forêts humides avec sous-bois pour nicher, zones humides en hiver. Crépusculaire et nocturne.',v:'Cri de parade (croule) : grognements graves alternant avec tsip aigus.'},'bruant-ortolan':{s:'Migrateur nicheur rare et en fort déclin. Protégé.',d:'Mâle avec tête et poitrine gris-vert, gorge jaune, bec rose, reste brun-roux. Femelle plus terne. Espèce emblématique malheureusement en déclin.',h:'Cultures céréalières, vignes, garrigues sur sols calcaires chauds. En forte régression. Migre vers l\'Afrique sub-saharienne.',v:'Chant plaintif et mélancolique : ti-ti-ti-diu très caractéristique.'},'hibou-des-marais':{s:'Nicheur rare et localisé. Hivernant peu commun.',d:'Hibou aux petites aigrettes, yeux jaunes. Actif le jour. Dessus brun strié, dessous chamois strié. Tache sombre sur les plis de l\'aile visible en vol.',h:'Marais, prairies humides, dunes. Niche au sol dans les zones humides. En fort déclin.',v:'Cri en vol : ppao-ppao.'},'tichodrome-echelette':{s:'Sédentaire en montagne. Descend en altitude basse en hiver.',d:'L\'un des oiseaux les plus beaux de France. Gris-rose avec grandes ailes papillon rouge cramoisi ponctuées de blanc. Grimpe sur les falaises verticales.',h:'Falaises verticales, parois rocheuses en montagne. Descend parfois dans les villes sur les façades de cathédrales en hiver.',v:'Chant fin et montant : tsii-tsii-tsii.'},'vautour-moine':{s:'Sédentaire et nicheur très rare. Réintroduit dans les Grands Causses.',d:'Le plus grand rapace d\'Europe. Entièrement brun foncé avec tête et cou dénudés bleu-grisâtre, collerette de plumes duvetées. Bec puissant pour dépecer. Envergure jusqu\'à 3 m.',h:'Forêts méditerranéennes, causses. Réintroduit dans les Cévennes et Grands Causses depuis 1992. Quelques dizaines de couples.',v:'Peu vocal. Grognements rauques.'},'pie-grieche-grise':{s:'Sédentaire et nicheur rare. Hivernant peu commun.',d:'Grande pie-grièche grise, blanc et noir. Dessus gris pâle, masque noir, ailes noires à large miroir blanc, dessous blanc. Rare et en déclin.',h:'Bocages, landes, grandes clairières forestières. Espèce rare et en fort déclin en France.',v:'Chant varié imitateur. Cri : charr strident caractéristique.'},'grand-duc-d-europe':{s:'Sédentaire et nicheur peu commun.',d:'Le plus grand rapace nocturne du monde. Grandes aigrettes orangées, yeux orange vif. Envergure jusqu\'à 1,8 m. Imposant. Chasse lièvres, lapins, hérons.',h:'Falaises, forêts, causses. Présent dans les Alpes, Pyrénées, Massif Central, Jura et Vosges.',v:'Chant grave et résonnant : bou-oo entendu de loin la nuit.'},'pygargue-a-queue-blanche':{s:'Nicheur rare en hausse. Hivernant peu commun.',d:'Le plus grand rapace européen. Queue blanche courte en coin chez l\'adulte brun. Bec et cire jaunes massifs. Envergure jusqu\'à 2,4 m.',h:'Grandes zones humides, lacs, estuaires, côtes. Réintroduit avec succès en Alsace. En expansion en France.',v:'Cri : ki-ki-ki-ki-ki-au... aigu et descendant.'},'sittelle-corse':{s:'Sédentaire et nicheur endémique de Corse. Espèce protégée.',d:'L\'unique espèce endémique stricte de France. Ressemble à la Sittelle torchepot mais dessous plus gris. Inféodée aux vieilles forêts de pins laricio.',h:'Forêts de pins laricio de montagne en Corse (au-dessus de 1000 m). Population estimée à quelques milliers de couples.',v:'Chant plus doux et mélancolique que la Sittelle torchepot.'},'tetras-lyre':{s:'Sédentaire et nicheur localement commun en montagne.',d:'Mâle noir brillant avec queue en lyre et sourcils rouges. Femelle brun barré. Parades collectives (leks) spectaculaires au printemps.',h:'Landes alpines et subalpines, lisières des forêts de conifères. Présent dans les Alpes, Pyrénées, Jura et Vosges.',v:'Chant de parade : roucoulements et sifflements au lek.'},'chevechette-d-europe':{s:'Sédentaire et nicheur rare dans les forêts de montagne.',d:'La plus petite chouette d\'Europe. Brun avec taches blanches, deux faux yeux dans la nuque. Diurne. Queue souvent dressée.',h:'Forêts de conifères de montagne (Alpes, Pyrénées, Vosges, Jura). Niche dans les trous de pics.',v:'Chant : série de sifflements pou pou pou répétés, souvent à l\'aube et au crépuscule.'},'macareux-moine':{s:'Nicheur localisé sur les côtes bretonnes. Hivernant en mer.',d:'L\'oiseau le plus populaire de France. Bec multicolore triangulaire orange, rouge et jaune. Dessus noir, dessous blanc, joues blanches. Nage et plonge.',h:'Falaises maritimes pour nicher (Sept-Îles). Passe la plupart de sa vie en mer.',v:'Grognement sourd aux colonies.'},'gelinotte-des-bois':{s:'Sédentaire et nicheur peu commun dans les forêts mixtes.',d:'Petit gallinacé forestier. Brun-roux finement dessiné. Mâle avec bavette noire bordée de blanc. Se camoufle parfaitement dans la végétation.',h:'Forêts de feuillus et mixtes avec sous-bois dense, notamment à noisetiers. Présente dans les Alpes, Pyrénées, Jura et Vosges.',v:'Chant : sifflement ténu si-si-siiiii peu audible.'},'nyctale-de-tengmalm':{s:'Sédentaire et nicheur en montagne. Peu commun.',d:'Petite chouette à grosse tête et grand disque facial brun avec cercle blanc. Yeux jaunes. Expression étonnée. Niche dans les cavités de Pics noirs.',h:'Forêts de conifères et mixtes de montagne (Alpes, Pyrénées, Vosges, Jura). Niche dans les trous de Pic noir.',v:'Chant : série de pou-pou-pou rapides répétés longtemps la nuit.'},'rale-des-genets':{s:'Migrateur nicheur rare et en fort déclin. Espèce protégée.',d:'Corps comprimé. Dessus brun strié, flancs barrés de roux et blanc, sourcil chamois, bec court. Difficile à voir dans la végétation.',h:'Prairies humides à végétation haute. En fort déclin par intensification agricole (fauches précoces).',v:'Chant nocturne : cré-cré répété sans arrêt, souvent toute la nuit.'},'pic-tridactyle':{s:'Sédentaire et nicheur rare dans les forêts de montagne.',d:'Seul pic européen à trois doigts. Mâle avec calotte jaune-or, dos noir avec barre blanche. Femelle avec calotte noire et blanche.',h:'Forêts de conifères de montagne (Alpes, Pyrénées, Vosges). Spécialisé dans l\'exploitation des arbres morts. Rare et localisé.',v:'Cri : kiou. Tambourinement lent et puissant.'},'grand-tetras':{s:'Sédentaire et nicheur rare. Espèce protégée et menacée.',d:'Le plus grand gallinacé d\'Europe. Mâle noir avec plaque rouge au-dessus de l\'œil, queue en éventail. Femelle brun cryptique. En fort déclin.',h:'Forêts de conifères de montagne avec clairières. Présent dans les Alpes, Pyrénées et Vosges. Population en déclin.',v:'Parade nuptiale nocturne avec chant bizarre : claquements de bec et sons de bouchon.'},'jaseur-boreal':{s:'Hivernant irrégulier, parfois abondant lors d\'invasions.',d:'Corps gris-brun avec huppe rousse, masque noir, ailes noires et jaunes avec extrémités rouges cireuses, bout de queue jaune. En groupe.',h:'Parcs, jardins avec baies lors des hivernages. Vient du nord lors de famines de baies.',v:'Cri : sirrrr trillé caractéristique. Bavard en groupe.'},'heron-cendre':{s:'Sédentaire et nicheur très commun.',d:'Le plus grand héron d\'Europe (90 cm). Gris dessus, blanc dessous, longues aigrettes noires sur la tête, sourcil et stries noires. Long cou replié en S en vol.',h:'Zones humides variées, rivières, étangs, prairies. Niche en colonies. Commun dans toute la France.',v:'Cri de vol : fraank rauque et strident.'},'tourterelle-turque':{s:'Sédentaire et nicheur très commun. Colonisé l\'Europe depuis les années 1950.',d:'Gris-crème avec collier noir à la nuque, taches noires et blanches sur l\'aile. Longue queue à large bordure blanche. Petite et élancée.',h:'Villes, villages, parcs, jardins. Omniprésente en France. Se nourrit de graines.',v:'Roucoulement répété : rou-rou-rou à trois syllabes.'},'vautour-fauve':{s:'Sédentaire et nicheur. Réintroduit avec succès dans les Causses.',d:'Grand vautour à col garni d\'une collerette blanche. Corps chamois, rémiges noires. Envergure jusqu\'à 2,8 m. La colonie des Gorges du Tarn est l\'une des plus importantes de France.',h:'Causses, gorges, zones d\'élevage extensif. Réintroduit dans les Gorges du Tarn et du Jonte depuis 1981. Maintenant plusieurs centaines d\'individus en Lozère.',v:'Peu vocal. Grognements et sifflements autour d\'une carcasse.'},'corneille-noire':{s:'Sédentaire et nicheur commun.',d:'Entièrement noir avec bec noir massif et puissant. Légèrement plus petite que le Grand Corbeau avec queue carrée. À distinguer de la Corneille mantelée (dos gris).',h:'Campagnes, bocages, forêts, zones urbaines. Très opportuniste et omnivore. Commune dans toute la France.',v:'Cri rauque : krraa répété. Moins guttural que le Grand Corbeau.'},'rougegorge-familier':{s:'Sédentaire et nicheur commun. Certains individus nordiques hivernent en France.',d:'Petit passereau trapu avec gorge et poitrine orange-roux encadrées de gris-bleu, ventre blanc, dos brun olivâtre. Grand œil sombre expressif.',h:'Forêts, bocages, jardins. Fréquente volontiers les sous-bois humides et les haies denses. Très commun dans toute la France.',v:'Chant fin et mélancolique avec de longues phrases descendantes. Cri : tic tic répété, souvent nocturne.'},'rossignol-philomene':{s:'Migrateur nicheur commun. Présent d\'avril à août.',d:'Brun-roux uniforme dessus, beige dessous, queue rousse. Discret à voir mais chant extraordinaire. Considéré comme le meilleur chanteur d\'Europe.',h:'Sous-bois denses et humides, haies, jardins avec fourrés. Commun dans les régions basses. Chante souvent de nuit.',v:'Chant nocturne et diurne d\'une richesse extraordinaire : longues phrases avec crescendos, trilles et notes percussives.'},'rougequeue-noir':{s:'Nicheur commun. Migrateur partiel.',d:'Mâle avec dessus noir ardoise, front blanc, queue rousse vibrante. Femelle gris-brunâtre avec queue rousse. Frisonne continuellement de la queue, comportement caractéristique.',h:'Falaises, rochers, constructions humaines, villages. Très commun en Lozère. Niche dans les interstices des bâtiments et falaises.',v:'Chant bref avec notes sifflées et froissement papier caractéristique.'},'merle-noir':{s:'Sédentaire et nicheur très commun, présent toute l\'année.',d:'Mâle entièrement noir avec bec et cercle oculaire jaune-orangé. Femelle brun-grisâtre avec gorge tachetée. Corps robuste, longue queue souvent relevée.',h:'Forêts, haies, jardins, parcs. Très adaptable, commun du littoral jusqu\'en altitude. L\'un des oiseaux les plus répandus de France.',v:'Chant mélodieux, puissant et varié, souvent entonné en fin de journée depuis un perchoir en hauteur. Cri d\'alarme : tchac-tchac-tchac strident.'},'mesange-bleue':{s:'Sédentaire et nicheur commun.',d:'Petite mésange au plumage bleu, jaune et blanc. Calotte bleue, dessous jaune vif, joues blanches bordées de bleu foncé. Bec court et fin.',h:'Forêts de feuillus, haies, jardins, vergers. Légèrement moins adaptable que la Mésange charbonnière, préfère les chênaies.',v:'Chant fin et rapide : tsii-tsii-titititi. Cris aigus très fréquents.'},'mesange-charbonniere':{s:'Sédentaire et nicheur très commun.',d:'La plus grande des mésanges. Dessus vert-jaune, dessous jaune avec large bande noire centrale. Tête noire avec grandes joues blanches.',h:'Forêts de feuillus et mixtes, haies, jardins, parcs. Très adaptable, présente dans presque tous les milieux arborés de France.',v:'Chant bitonique tsii-tsa très caractéristique. Répertoire très varié.'},'fauvette-a-tete-noire':{s:'Nicheur très commun. Partiellement sédentaire dans le sud.',d:'Mâle avec calotte noire, femelle avec calotte rousse-brune. Dessus gris-brunâtre, dessous grisâtre. L\'une des fauvettes les plus communes et audacieuses.',h:'Forêts, haies, jardins, bocages. Très adaptable. Commune dans toute la France.',v:'Chant mélodieux, puissant et varié, surnommé le Rossignol du nord.'},'pouillot-veloce':{s:'Nicheur très commun. L\'un des premiers migrateurs à arriver.',d:'Petit pouillot brun-olivâtre dessus, blanchâtre dessous, sourcil chamois peu marqué. Se balance continuellement en hochant la queue.',h:'Forêts, parcs, jardins, haies. Omniprésent dans presque tous les milieux arborés. Arrive dès mars.',v:'Chant inoubliable : tchiff-tchaff alternant deux notes. Cri : huitt sifflé.'},'moineau-domestique':{s:'Sédentaire et nicheur très commun.',d:'Mâle avec calotte grise, joues blanches, bavette noire, dos brun strié. Femelle plus terne, brun-crème avec sourcil chamois. Grégaire, lié aux habitations humaines.',h:'Villes, villages, fermes. Niche dans les interstices des bâtiments. En déclin dans certaines zones urbaines.',v:'Cri : tschilp tschilp répété. Chant : suite de ces mêmes cris.'},'pinson-des-arbres':{s:'Sédentaire et nicheur très commun. Populations nordiques hivernantes.',d:'Mâle avec calotte et nuque bleu-gris, dos brun-roux, deux barres alaires blanches, poitrine rose-vineux. Femelle plus terne. Tache blanche distinctive sur l\'aile.',h:'Forêts de toutes sortes, haies, jardins, parcs. L\'un des passereaux les plus communs et abondants de France.',v:'Chant en cascade se terminant par un flourish. Cri : pink pink répété en vol.'},'chardonneret-elegant':{s:'Sédentaire et nicheur commun.',d:'L\'un des oiseaux les plus colorés de France. Face rouge vif, calotte et nuque noires, joues blanches, ailes noires avec large bande jaune vif. Corps brun-chamois.',h:'Jardins, friches, vergers, lisières. Recherche les graines de chardons et composées. Commun dans toute la France.',v:'Chant gazouillant et tintinnabulant très mélodieux. Cri de vol : tswitswit rapide.'},'serin-cini':{s:'Sédentaire et nicheur commun dans le sud, en expansion vers le nord.',d:'Petit fringille jaune-verdâtre strié. Mâle avec front et dessous jaune vif. Femelle plus terne. Bec court et conique. Très actif.',h:'Jardins, parcs, vignes, garrigues avec arbres. En expansion notable depuis les années 1950.',v:'Chant gazouillant rapide : trille continu ti-li-li-li-tsrrr.'}};
+// ═══ ÉTAT ═══════════════════════════════════════════
+let obs={},stF='all',txF=[],q='',srt='name',pg=0,viewMode='grid';
+let imgC={},wikiImgC={};
+let mainMap=null,mainMk=[];
+let pkMap=null,pkMk=null,pkCb=null;
+let deferredInstall=null;
+// ID de la fiche actuellement ouverte + ref GPS en cours d'édition
+let currentDetailId=null;
+let currentGps={seen:'',heard:''};
+
+// ═══ UTILS ══════════════════════════════════════════
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const $=id=>document.getElementById(id);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function parseGps(s){if(!s)return null;const p=s.split(',').map(x=>parseFloat(x.trim()));return(p.length===2&&!isNaN(p[0])&&!isNaN(p[1]))?p:null;}
+
+// ═══ PERSISTANCE ════════════════════════════════════
+function loadObs(){try{const d=localStorage.getItem('ornidex_obs_v12');if(d)obs=JSON.parse(d);}catch(e){}}
+function saveObs(){try{localStorage.setItem('ornidex_obs_v12',JSON.stringify(obs));}catch(e){}}
+function loadImgC(){try{const d=localStorage.getItem('ornidex_img_v12');if(d)imgC=JSON.parse(d);}catch(e){}}
+function saveImgC(){try{localStorage.setItem('ornidex_img_v12',JSON.stringify(imgC));}catch(e){}}
+
+// ═══ PHOTO iNaturalist ══════════════════════════════
+async function getPhoto(b){
+  if(imgC[b.id]!==undefined)return imgC[b.id];
+  imgC[b.id]=null;
+  try{
+    const r=await fetch(`https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(b.name)}&per_page=1&rank=species&locale=fr`);
+    const d=await r.json();
+    const url=d?.results?.[0]?.default_photo?.medium_url||null;
+    imgC[b.id]=url;return url;
+  }catch{return null;}
+}
+
+// ═══ CARTE RÉPARTITION WIKIPEDIA ════════════════════
+// Résoudre le vrai titre EN via redirection du nom latin, puis chercher
+// une image de répartition dans la liste des images de l'article
+async function getWikiRangeMap(b){
+  if(!b.latin)return null;
+  const key=b.id;
+  if(wikiImgC[key]!==undefined)return wikiImgC[key];
+  wikiImgC[key]=null;
+  try{
+    const latin=b.latin.replace(' ','_');
+    // Étape 1 : résoudre le vrai titre de l'article (Common blackbird, etc.)
+    const r1=await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(latin)}&redirects=1&format=json&origin=*`);
+    const d1=await r1.json();
+    const pages1=Object.values(d1?.query?.pages||{});
+    if(!pages1.length||pages1[0].missing!==undefined)return null;
+    const resolvedTitle=pages1[0].title;
+
+    // Étape 2 : lister toutes les images de l'article résolu
+    const r2=await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(resolvedTitle)}&prop=images&imlimit=50&format=json&origin=*`);
+    const d2=await r2.json();
+    const pages2=Object.values(d2?.query?.pages||{});
+    const images=(pages2[0]?.images)||[];
+
+    // Chercher une image de répartition
+    const keywords=['range','distribution','map','repartition','aire'];
+    const rangeImg=images.find(img=>{
+      const n=img.title.toLowerCase();
+      return keywords.some(k=>n.includes(k));
+    });
+    if(!rangeImg)return null;
+
+    // Étape 3 : récupérer l'URL directe de l'image
+    const r3=await fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(rangeImg.title)}&prop=imageinfo&iiprop=url&format=json&origin=*`);
+    const d3=await r3.json();
+    const pages3=Object.values(d3?.query?.pages||{});
+    const imgUrl=pages3[0]?.imageinfo?.[0]?.url||null;
+    wikiImgC[key]=imgUrl;
+    return imgUrl;
+  }catch(e){console.warn('WikiRange:',e);return null;}
+}
+
+// ═══ TABS ════════════════════════════════════════════
+function switchTab(tab,pushHistory=true){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  $('page-'+tab).classList.add('active');
+  $('tab-'+tab).classList.add('active');
+  if(tab==='map')setTimeout(initMainMap,50);
+  if(pushHistory)history.pushState({view:'tab',tab},'');
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+
+// ═══ GESTION BOUTON RETOUR ANDROID ═══════════════════
+// État initial : on empile un état "base" pour intercepter le premier retour
+history.replaceState({view:'tab',tab:'grid'},'');
+
+window.addEventListener('popstate',e=>{
+  const s=e.state;
+  if(!s){history.pushState({view:'tab',tab:'grid'},'');return;}
+  // Si une fiche est ouverte → la fermer
+  if($('ov').style.display!=='none'){
+    closeDetail();
+    // Remettre l'état courant dans l'historique
+    history.pushState({view:'tab',tab:'grid'},'');
+    return;
+  }
+  // Si le picker est ouvert → le fermer
+  if($('picker-ov').style.display!=='none'){
+    closePicker();
+    history.pushState({view:'tab',tab:'grid'},'');
+    return;
+  }
+  // Si on est sur un onglet autre que grid → revenir à grid
+  if(s.view==='tab'&&s.tab!=='grid'){
+    switchTab('grid',false);
+    history.replaceState({view:'tab',tab:'grid'},'');
+    return;
+  }
+  // Sur grid → on laisse quitter (comportement natif)
+});
+
+// ═══ FILTRES STATUT ══════════════════════════════════
+function setStF(v,mob){
+  stF=v;
+  document.querySelectorAll('.sbi[data-st]').forEach(el=>el.classList.remove('st-on'));
+  document.querySelectorAll(`.sbi[data-st="${v}"]`).forEach(el=>el.classList.add('st-on'));
+  pg=0;renderGrid();if(mob)switchTab('grid',false);
+}
+document.querySelectorAll('.sbi[data-st]').forEach(el=>el.addEventListener('click',()=>setStF(el.dataset.st,!!el.dataset.mob)));
+
+// ═══ FILTRES TAXO (multi) ════════════════════════════
+function toggleTx(type,value,mob){
+  const key=`${type}:${value}`;
+  const idx=txF.findIndex(f=>f.key===key);
+  if(idx>=0)txF.splice(idx,1);
+  else txF.push({key,type,value,label:value});
+  document.querySelectorAll(`.sbi[data-txk="${key}"]`).forEach(el=>el.classList.toggle('tx-on',txF.some(f=>f.key===key)));
+  renderPills();pg=0;renderGrid();if(mob)switchTab('grid',false);
+}
+function renderPills(){
+  const c=$('af');
+  c.innerHTML=txF.map(f=>`<span class="fp" data-key="${f.key}">${f.label}<span class="fp-x"> ×</span></span>`).join('');
+  c.querySelectorAll('.fp').forEach(p=>p.addEventListener('click',()=>{
+    const f=txF.find(x=>x.key===p.dataset.key);if(f)toggleTx(f.type,f.value,false);
+  }));
+}
+
+// ═══ TAXONOMIE ═══════════════════════════════════════
+function buildTaxo(cid,mob){
+  const tree={};
+  BIRDS.forEach(b=>{if(!tree[b.order])tree[b.order]={fams:new Set(),count:0};tree[b.order].fams.add(b.family);tree[b.order].count++;});
+  const c=$(cid);c.innerHTML='';
+  Object.keys(tree).sort().forEach(ord=>{
+    const fams=[...tree[ord].fams].sort();
+    const ok=`order:${ord}`;
+    const oel=document.createElement('div');oel.className='sbi';if(mob)oel.dataset.mob='1';
+    oel.dataset.txk=ok;
+    oel.innerHTML=`<i class="ti ti-chevron-right caret"></i><span style="flex:1;font-size:11px">${ord}</span><span class="sbc">${tree[ord].count}</span>`;
+    c.appendChild(oel);
+    const sub=document.createElement('div');sub.className='sb-sub';
+    fams.forEach(fam=>{
+      const fk=`family:${fam}`;const cnt=BIRDS.filter(b=>b.family===fam).length;
+      const fel=document.createElement('div');fel.className='sbi i1';if(mob)fel.dataset.mob='1';
+      fel.dataset.txk=fk;
+      fel.innerHTML=`<i class="ti ti-minus" style="font-size:9px;opacity:.4"></i><span style="flex:1;font-size:11px">${fam}</span><span class="sbc">${cnt}</span>`;
+      sub.appendChild(fel);
+      fel.addEventListener('click',()=>toggleTx('family',fam,mob));
+    });
+    c.appendChild(sub);
+    oel.addEventListener('click',()=>{sub.classList.toggle('open');oel.classList.toggle('open');toggleTx('order',ord,mob);});
+  });
+}
+
+// ═══ STATS ═══════════════════════════════════════════
+function updateStats(){
+  const s=BIRDS.filter(b=>obs[b.id]?.seen).length;
+  const h=BIRDS.filter(b=>obs[b.id]?.heard).length;
+  const u=BIRDS.length-BIRDS.filter(b=>obs[b.id]?.seen||obs[b.id]?.heard).length;
+  $('st-s').textContent=s+' obs.';$('st-h').textContent=h+' entendus';
+  const lifers=BIRDS.filter(b=>obs[b.id]?.seen||obs[b.id]?.heard).length;$('st-lifer').textContent=lifers+' lifer'+(lifers!==1?'s':'');
+  [['all',BIRDS.length],['seen',s],['heard',h],['unseen',u]].forEach(([k,v])=>{
+    ['d','m'].forEach(sx=>{const el=$('cnt-'+k+'-'+sx);if(el)el.textContent=v;});
+  });
+}
+
+// ═══ GRILLE ══════════════════════════════════════════
+function getFiltered(){
+  const qq=norm(q);
+  let allowed=null;
+  if(txF.length){allowed=new Set();txF.forEach(f=>BIRDS.forEach(b=>{if(f.type==='order'&&b.order===f.value)allowed.add(b.id);if(f.type==='family'&&b.family===f.value)allowed.add(b.id);}));}
+  let list=BIRDS.filter(b=>{
+    if(allowed&&!allowed.has(b.id))return false;
+    if(qq&&!norm(b.name).includes(qq)&&!norm(b.family).includes(qq)&&!norm(b.order).includes(qq))return false;
+    if(stF==='seen')return obs[b.id]?.seen;
+    if(stF==='heard')return obs[b.id]?.heard;
+    if(stF==='unseen')return!obs[b.id]?.seen&&!obs[b.id]?.heard;
+    return true;
+  });
+  if(srt==='name')list.sort((a,b)=>a.name.localeCompare(b.name,'fr'));
+  else if(srt==='name-desc')list.sort((a,b)=>b.name.localeCompare(a.name,'fr'));
+  else if(srt==='family')list.sort((a,b)=>a.family.localeCompare(b.family,'fr')||a.name.localeCompare(b.name,'fr'));
+  else if(srt==='order')list.sort((a,b)=>a.order.localeCompare(b.order,'fr')||a.family.localeCompare(b.family,'fr')||a.name.localeCompare(b.name,'fr'));
+  else if(srt==='seen')list.sort((a,b)=>{const as=(obs[a.id]?.seen||obs[a.id]?.heard)?1:0,bs=(obs[b.id]?.seen||obs[b.id]?.heard)?1:0;return bs-as||a.name.localeCompare(b.name,'fr');});
+  return list;
+}
+function cCls(id){const o=obs[id];if(!o)return'';if(o.seen&&o.heard)return'cb';if(o.seen)return'cs';if(o.heard)return'ch';return'';}
+
+
+// ═══ SCROLL INFINI ═══════════════════════════════════
+let _allFiltered=[], _rendered=0;
+const BATCH=40;
+
+function renderBatch(){
+  const grid=$('grid');
+  const slice=_allFiltered.slice(_rendered, _rendered+BATCH);
+  if(!slice.length)return;
+  if(viewMode==='grid'){
+    const frag=document.createDocumentFragment();
+    slice.forEach(b=>{
+      const o=obs[b.id]||{};
+      const bdg=[o.seen?'<span class="bdg s"><i class="ti ti-eye"></i> Vu</span>':'',o.heard?'<span class="bdg h"><i class="ti ti-ear"></i> Entendu</span>':''].filter(Boolean);
+      const img=imgC[b.id]?`<img src="${imgC[b.id]}" alt="${b.name}" class="loaded">`:'<i class="ti ti-feather ph"></i>';
+      const div=document.createElement('div');
+      div.className='card '+cCls(b.id);div.dataset.id=b.id;div.setAttribute('role','button');div.setAttribute('tabindex','0');
+      div.innerHTML=`<div class="cimg" id="ci-${b.id}">${img}</div><div class="ci"><div class="cn">${b.name}</div><div class="cl">${b.family}</div>${bdg.length?'<div class="cbdg">'+bdg.join('')+'</div>':''}</div>`;
+      div.addEventListener('click',()=>openDetail(b.id));
+      div.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')openDetail(b.id);});
+      frag.appendChild(div);
+    });
+    grid.appendChild(frag);
+  } else {
+    const frag=document.createDocumentFragment();
+    slice.forEach(b=>{
+      const o=obs[b.id]||{};
+      const img=imgC[b.id]?`<img src="${imgC[b.id]}" alt="${b.name}">`:'<i class="ti ti-feather" style="font-size:16px;opacity:.3"></i>';
+      const bdg=[o.seen?'<span class="bdg s"><i class="ti ti-eye"></i></span>':'',o.heard?'<span class="bdg h"><i class="ti ti-ear"></i></span>':''].filter(Boolean);
+      const div=document.createElement('div');
+      div.className='list-item';div.dataset.id=b.id;
+      div.innerHTML=`<div class="list-thumb">${img}</div><div class="list-info"><div class="list-name">${b.name}</div><div class="list-sub">${b.family} · ${rarityLabel(b.r)}</div></div><div class="list-badges">${bdg.join('')}</div>`;
+      div.addEventListener('click',()=>openDetail(b.id));
+      frag.appendChild(div);
+    });
+    grid.appendChild(frag);
+  }
+  _rendered+=slice.length;
+  // Lazy load photos
+  const toLoad=slice.filter(b=>imgC[b.id]===undefined);
+  const lb=async bs=>{for(const b of bs){const url=await getPhoto(b);const el=$('ci-'+b.id)||grid.querySelector(`[data-id="${b.id}"] .list-thumb`);if(url&&el){const img=document.createElement('img');img.src=url;img.alt=b.name;if(el.classList.contains('cimg')){img.onload=()=>{img.classList.add('loaded');saveImgC();};el.innerHTML='';el.appendChild(img);}else{img.onload=()=>saveImgC();el.innerHTML='';el.appendChild(img);}}}};
+  for(let i=0;i<toLoad.length;i+=8){lb(toLoad.slice(i,i+8));if(i<toLoad.length-8)setTimeout(()=>{},80);}
+}
+
+function rarityLabel(r){
+  return ['','Très commun','Commun','Assez commun','Peu commun','Rare'][r]||'';
+}
+
+// Observer de scroll pour charger la suite
+let _scrollObs=null;
+function setupScrollObserver(){
+  if(_scrollObs)_scrollObs.disconnect();
+  const sentinel=$('scroll-sentinel');
+  if(!sentinel)return;
+  _scrollObs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting&&_rendered<_allFiltered.length)renderBatch();
+  },{threshold:0.1});
+  _scrollObs.observe(sentinel);
+}
+
+async function renderGrid(){
+  _allFiltered=getFiltered();
+  const total=_allFiltered.length;
+  $('st-t').textContent=total+' espèce'+(total>1?'s':'');
+  _rendered=0;
+  const gw=$('gw');
+  const grid=$('grid');
+  // Vider
+  grid.innerHTML='';
+  // Retirer ancien sentinel
+  const old=$('scroll-sentinel');if(old)old.remove();
+  if(!total){
+    grid.innerHTML='<div class="empty"><i class="ti ti-binoculars" style="font-size:26px;display:block;margin:0 auto .5rem;opacity:.3"></i>Aucun oiseau trouvé</div>';
+    updateStats();return;
+  }
+  // Adapter la grille au mode
+  if(viewMode==='grid'){
+    grid.style.display='grid';
+  } else {
+    grid.style.display='block';
+  }
+  // Sentinel pour scroll infini
+  const sentinel=document.createElement('div');
+  sentinel.id='scroll-sentinel';sentinel.style.height='10px';
+  gw.appendChild(sentinel);
+  // Premier batch
+  renderBatch();
+  setupScrollObserver();
+  updateStats();
+  // Cacher pager (on n'en a plus besoin)
+  $('pager').style.display='none';
+}
+
+
+// ═══ DESCRIPTION ═════════════════════════════════════
+function descHTML(b){
+  const d=DESCS[b.id];
+  if(!d||!d.d)return`<div class="desc-block"><div class="desc-none">Aucune description disponible.</div></div>`;
+  return`<div class="desc-block"><div class="desc-statut">${d.s}</div>
+    <div class="desc-sec"><div class="desc-sec-title">Description</div><div class="desc-sec-text">${d.d}</div></div>
+    <hr style="border:none;border-top:.5px solid var(--bd);margin:.2rem 0">
+    <div class="desc-sec"><div class="desc-sec-title">Habitat & répartition</div><div class="desc-sec-text">${d.h}</div></div>
+    <hr style="border:none;border-top:.5px solid var(--bd);margin:.2rem 0">
+    <div class="desc-sec"><div class="desc-sec-title">Voix</div><div class="desc-sec-text">${d.v}</div></div>
+  </div>`;
+}
+
+// ═══ FICHE DÉTAIL ════════════════════════════════════
+function obsRowHTML(key,label,color,icon,o){
+  const gps=currentGps[key];
+  return`<div class="orow">
+    <div class="och"><input type="checkbox" id="ck-${key}" ${o[key]?'checked':''}>
+      <label for="ck-${key}"><i class="ti ti-${icon}" style="color:${color}"></i> ${label}</label></div>
+    <div class="ofields" id="of-${key}" style="display:${o[key]?'grid':'none'}">
+      <div><label>Date</label><input type="date" id="od-${key}" value="${o[key+'Date']||''}"></div>
+      <div><label>Lieu</label><input type="text" id="op-${key}" placeholder="ex. Gorges du Tarn" value="${o[key+'Place']||''}"></div>
+    </div>
+    <div class="obs-actions" id="oa-${key}" style="display:${o[key]?'flex':'none'}">
+      <button class="loc-btn" id="lb-${key}"><i class="ti ti-map-pin" style="font-size:11px"></i> Localisation</button>
+      <span class="gps-disp" id="gd-${key}" style="display:${gps?'flex':'none'}">${gps||''}</span>
+    </div>
+  </div>`;
+}
+
+async function openDetail(id){
+  const b=BIRDS.find(x=>x.id===id);if(!b)return;
+  const o=obs[id]||{};
+  currentDetailId=id;
+  // Initialiser les GPS depuis les données sauvegardées
+  currentGps.seen=o.seenGps||'';
+  currentGps.heard=o.heardGps||'';
+
+  const pu=imgC[b.id]||await getPhoto(b);
+  const wikiUrl=`https://fr.wikipedia.org/wiki/${encodeURIComponent(b.name.replace(/ /g,'_'))}`;
+
+  $('dpanel').innerHTML=`
+    <div class="dim" id="det-img" style="cursor:${pu?'zoom-in':'default'}">${pu?`<img src="${pu}" alt="${b.name}">`:`<i class="ti ti-feather dph"></i>`}</div>
+    <div class="dbd">
+      <div class="dhead">
+        <div class="dtitle"><h3>${b.name}</h3>${b.latin?`<div class="dlatin">${b.latin}</div>`:''}</div>
+        <button class="cbtn" id="d-close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="dtags"><span class="tag">${b.order}</span><span class="tag">${b.family}</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="rarity r${b.r}">${['','★★★★★','★★★★','★★★','★★','★'][b.r]||''} ${['','Très commun','Commun','Assez commun','Peu commun','Rare'][b.r]||''}</span>
+        <div class="seasons" id="seasons-block"></div>
+      </div>
+      ${descHTML(b)}
+      ${b.latin?`<div class="rep-block"><div class="rep-title">Répartition mondiale</div><div class="rep-load" id="rep-load">Chargement de la carte…</div></div>`:''}
+      <a class="wiki-link" href="${wikiUrl}" target="_blank" rel="noopener">
+        <i class="ti ti-brand-wikipedia"></i> Fiche Wikipedia
+      </a>
+      <div class="obs-sec">
+        <div class="obs-tit">Mes observations</div>
+        ${obsRowHTML('seen','Observé','#3B6D11','eye',o)}
+        ${obsRowHTML('heard','Entendu','#185FA5','ear',o)}
+        <div style="margin-bottom:.5rem">
+          <label style="font-size:10px;color:var(--tx3);display:block;margin-bottom:3px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Notes</label>
+          <textarea class="notes-field" id="d-notes" placeholder="Comportement, contexte, détails…">${o.notes||''}</textarea>
+        </div>
+        <button class="savebtn" id="d-save"><i class="ti ti-device-floppy"></i> Enregistrer</button>
+      </div>
+    </div>`;
+
+  $('ov').style.display='flex';
+  history.pushState({view:'detail',id},'');
+
+  // Lightbox sur l'image
+  const detImg=$('det-img');
+  if(detImg&&pu){detImg.onclick=()=>openLightbox(pu,b.name);}
+
+  // Statut saisonnier
+  const sb=$('seasons-block');
+  if(sb&&b.s){
+    const SMAP={S:['sS','Sédentaire'],N:['sN','Nicheur'],M:['sM','Migrateur'],H:['sH','Hivernant']};
+    sb.innerHTML=[...b.s].map(c=>SMAP[c]?`<span class="season ${SMAP[c][0]}">${SMAP[c][1]}</span>`:'').join('');
+  }
+
+  $('d-close').onclick=closeDetail;
+
+  // Toggle champs
+  ['seen','heard'].forEach(key=>{
+    $(`ck-${key}`).onchange=e=>{
+      $(`of-${key}`).style.display=e.target.checked?'grid':'none';
+      $(`oa-${key}`).style.display=e.target.checked?'flex':'none';
+    };
+    // Bouton localisation — ouvre le picker PAR-DESSUS sans toucher à la fiche
+    $(`lb-${key}`).onclick=()=>openPicker(
+      currentGps[key],
+      key,
+      `${b.name} — ${key==='seen'?'Observation':'Écoute'}`
+    );
+  });
+
+  // Enregistrer — lit currentGps qui est mis à jour par le picker
+  $('d-save').onclick=()=>{
+    obs[currentDetailId]={
+      seen:$('ck-seen').checked, heard:$('ck-heard').checked,
+      seenDate:$('od-seen').value, seenPlace:$('op-seen').value, seenGps:currentGps.seen,
+      heardDate:$('od-heard').value, heardPlace:$('op-heard').value, heardGps:currentGps.heard,
+    };
+    saveObs();renderGrid();updateMapPins();
+    closeDetail();toast('✓ Enregistré');
+  };
+
+  // Carte répartition Wikipedia
+  if(b.latin){
+    getWikiRangeMap(b).then(url=>{
+      const el=$('rep-load');if(!el)return;
+      if(!url){el.textContent='Carte non disponible';return;}
+      const img=document.createElement('img');
+      img.className='rep-img';img.alt=`Répartition ${b.name}`;
+      img.src=url;
+      img.onerror=()=>{el.textContent='Carte non disponible';};
+      el.parentNode.replaceChild(img,el);
+    });
+  }
+}
+
+function closeDetail(){$('ov').style.display='none';currentDetailId=null;}
+$('ov').addEventListener('click',e=>{if(e.target===$('ov'))closeDetail();});
+
+// ═══ PICKER LOCALISATION ════════════════════════════
+// Clé en cours : 'seen' ou 'heard'
+let pkKey=null;
+
+function openPicker(existingGps, key, hint){
+  pkKey=key;pkMk=null;
+  $('picker-ov').style.display='flex';
+  $('pk-ok').disabled=true;
+  $('pk-coords').textContent='—';
+  $('picker-hint').textContent=hint||'Appuie sur la carte ou utilise le GPS';
+
+  if(pkMap){pkMap.remove();pkMap=null;}
+
+  const center=parseGps(existingGps)||[44.5,3.2];
+  const zoom=existingGps?14:9;
+
+  setTimeout(()=>{
+    pkMap=L.map('picker-map',{zoomControl:true,tap:false,dragging:true,touchZoom:true}).setView(center,zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(pkMap);
+    setTimeout(()=>pkMap.invalidateSize(),200);
+
+    // Afficher les lieux déjà enregistrés (pins gris cliquables)
+    const locs={};
+    BIRDS.forEach(b=>{
+      const o=obs[b.id];if(!o)return;
+      const addLoc=(gps,place)=>{
+        const p=parseGps(gps);if(!p)return;
+        const k=`${p[0].toFixed(3)},${p[1].toFixed(3)}`;
+        if(!locs[k])locs[k]={lat:p[0],lng:p[1],place:place||'',sp:[]};
+        if(!locs[k].sp.find(s=>s===b.name))locs[k].sp.push(b.name);
+      };
+      if(o.seen&&o.seenGps)addLoc(o.seenGps,o.seenPlace);
+      if(o.heard&&o.heardGps)addLoc(o.heardGps,o.heardPlace);
+    });
+    Object.values(locs).forEach(loc=>{
+      const icon=L.divIcon({
+        html:`<div style="background:#888;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer" title="${loc.place||loc.sp[0]||''}">📍</div>`,
+        className:'',iconSize:[26,26],iconAnchor:[13,13]
+      });
+      const m=L.marker([loc.lat,loc.lng],{icon}).addTo(pkMap);
+      const label=loc.place||(loc.sp.length===1?loc.sp[0]:`${loc.sp.length} espèces`);
+      m.bindTooltip(label,{permanent:false,direction:'top',offset:[0,-14]});
+      m.on('click',()=>{
+        // Sélectionner ce lieu existant
+        placePin(loc.lat,loc.lng);
+        pkMap.setView([loc.lat,loc.lng],15);
+      });
+    });
+
+    // Marqueur initial si GPS existant (édition)
+    const existing=parseGps(existingGps);
+    if(existing)placePin(existing[0],existing[1]);
+
+    // Clic sur la carte = nouveau pin
+    pkMap.on('click',e=>placePin(e.latlng.lat,e.latlng.lng));
+  },300);
+}
+
+function placePin(lat,lng){
+  if(pkMk)pkMk.remove();
+  pkMk=L.marker([lat,lng],{draggable:true}).addTo(pkMap);
+  pkMk.on('drag dragend',()=>{const ll=pkMk.getLatLng();setCoords(ll.lat,ll.lng);});
+  setCoords(lat,lng);
+}
+
+function setCoords(lat,lng){
+  $('pk-coords').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  $('pk-ok').disabled=false;
+}
+
+// Bouton GPS
+$('pk-gps').addEventListener('click',e=>{
+  e.stopPropagation();
+  if(!navigator.geolocation){toast('GPS non disponible');return;}
+  const icon=$('pk-gps-icon');
+  icon.className='ti ti-loader spin';
+  toast('Localisation…');
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      icon.className='ti ti-navigation';
+      if(!pkMap){toast('Carte non prête');return;}
+      pkMap.setView([pos.coords.latitude,pos.coords.longitude],16);
+      placePin(pos.coords.latitude,pos.coords.longitude);
+      toast('Position trouvée !');
+    },
+    ()=>{icon.className='ti ti-navigation';toast('Position indisponible');},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:0}
+  );
+});
+
+function closePicker(){
+  $('picker-ov').style.display='none';
+  if(pkMap){pkMap.remove();pkMap=null;}
+  pkMk=null;pkKey=null;
+}
+
+$('pk-close').onclick=closePicker;
+$('pk-cancel').onclick=closePicker;
+$('pk-ok').onclick=()=>{
+  if(!pkMk)return;
+  const ll=pkMk.getLatLng();
+  const coords=`${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+  // Mettre à jour currentGps (lu par le bouton Enregistrer de la fiche)
+  currentGps[pkKey]=coords;
+  // Mettre à jour l'affichage GPS dans la fiche (qui est toujours dans le DOM)
+  const gd=$(`gd-${pkKey}`);
+  if(gd){gd.textContent=coords;gd.style.display='flex';}
+  closePicker();
+  toast('Position enregistrée');
+  // La fiche est toujours là, le bouton Enregistrer est accessible
+};
+
+// ═══ CARTE PRINCIPALE ════════════════════════════════
+function initMainMap(){
+  if(mainMap){mainMap.invalidateSize();updateMapPins();return;}
+  mainMap=L.map('leaflet-map',{zoomControl:true}).setView([44.5,3.2],9);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(mainMap);
+  updateMapPins();
+}
+function updateMapPins(){
+  if(!mainMap)return;
+  mainMk.forEach(m=>m.remove());mainMk=[];
+  const locs={};
+  BIRDS.forEach(b=>{
+    const o=obs[b.id];if(!o)return;
+    const add=gps=>{const p=parseGps(gps);if(!p)return;const k=`${p[0].toFixed(3)},${p[1].toFixed(3)}`;if(!locs[k])locs[k]={lat:p[0],lng:p[1],sp:[]};if(!locs[k].sp.find(s=>s.id===b.id))locs[k].sp.push({id:b.id,name:b.name,seen:o.seen,heard:o.heard});};
+    if(o.seen&&o.seenGps)add(o.seenGps);if(o.heard&&o.heardGps)add(o.heardGps);
+  });
+  const arr=Object.values(locs);
+  const mc=$('map-count');if(mc)mc.textContent=arr.length+' lieu'+(arr.length>1?'x':'');
+  const me=$('map-empty');if(me)me.style.display=arr.length?'none':'flex';
+  arr.forEach(loc=>{
+    const icon=L.divIcon({html:`<div style="background:#3B6D11;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.35)">${loc.sp.length}</div>`,className:'',iconSize:[30,30],iconAnchor:[15,15]});
+    const m=L.marker([loc.lat,loc.lng],{icon}).addTo(mainMap);
+    const links=loc.sp.map(s=>{
+      const ob=obs[s.id]||{};
+      const info=[];
+      if(ob.seenDate||ob.seenPlace)info.push(`<div style="font-size:9px;color:#555;margin-left:14px">${[ob.seenDate,ob.seenPlace].filter(Boolean).join(' · ')}</div>`);
+      if(ob.heardDate||ob.heardPlace)info.push(`<div style="font-size:9px;color:#555;margin-left:14px">${[ob.heardDate,ob.heardPlace].filter(Boolean).join(' · ')}</div>`);
+      return`<li style="margin-bottom:5px"><a href="#" class="sp-link" data-id="${s.id}">${s.seen?'<i class="ti ti-eye" style="font-size:10px;color:#3B6D11"></i>':''}${s.heard?'<i class="ti ti-ear" style="font-size:10px;color:#185FA5"></i>':''}  ${s.name}</a>${info.join('')}</li>`;
+    }).join('');
+    m.bindPopup(L.popup({maxWidth:220}).setContent(`<div class="lf-pop"><h4>${loc.sp.length} espèce${loc.sp.length>1?'s':''}</h4><ul>${links}</ul></div>`));
+    m.on('popupopen',()=>setTimeout(()=>{document.querySelectorAll('.sp-link').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();m.closePopup();switchTab('grid');setTimeout(()=>openDetail(a.dataset.id),150);}));},50));
+    mainMk.push(m);
+  });
+  if(arr.length){const bounds=L.latLngBounds(arr.map(l=>[l.lat,l.lng]));mainMap.fitBounds(bounds,{padding:[40,40],maxZoom:13});}
+}
+
+// ═══ EXPORT / IMPORT ═════════════════════════════════
+$('btn-exp').onclick=()=>{
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify({version:10,exported:new Date().toISOString(),observations:obs},null,2));
+  a.download='ornidex-'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Exporté !');
+};
+$('imp-file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.observations){obs={...obs,...d.observations};saveObs();renderGrid();updateMapPins();toast('Importé !');}}catch{toast('Fichier invalide');}};
+  r.readAsText(f);e.target.value='';
+};
+
+// ═══ EVENTS ══════════════════════════════════════════
+$('search').oninput=e=>{q=e.target.value;pg=0;renderGrid();};
+$('sort-sel').onchange=e=>{srt=e.target.value;pg=0;renderGrid();};
+$('prev').onclick=()=>{pg--;renderGrid();$('gw').scrollTo(0,0);};
+$('next').onclick=()=>{pg++;renderGrid();$('gw').scrollTo(0,0);};
+
+
+// Toggle grille/liste
+$('vt-grid').onclick=()=>{viewMode='grid';$('vt-grid').classList.add('active');$('vt-list').classList.remove('active');renderGrid();};
+$('vt-list').onclick=()=>{viewMode='list';$('vt-list').classList.add('active');$('vt-grid').classList.remove('active');renderGrid();};
+
+// ═══ INSTALL PWA ══════════════════════════════════════
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredInstall=e;
+  const bar=$('ibar');
+  bar.innerHTML='<div class="ibar-inner"><i class="ti ti-device-mobile" style="font-size:16px;flex-shrink:0"></i><span>Installer Ornidex comme app</span><button class="inst" id="ibtn">Installer</button><button class="cls" id="iclose"><i class="ti ti-x"></i></button></div>';
+  $('ibtn').onclick=async()=>{if(!deferredInstall)return;deferredInstall.prompt();const{outcome}=await deferredInstall.userChoice;if(outcome==='accepted')toast('Installé !');deferredInstall=null;$('ibar').innerHTML='';};
+  $('iclose').onclick=()=>$('ibar').innerHTML='';
+});
+
+// ═══ INIT ═════════════════════════════════════════════
+loadObs();loadImgC();
+buildTaxo('taxo-d',false);buildTaxo('taxo-m',true);
+renderGrid();
+</script>
+</body>
+</html>
